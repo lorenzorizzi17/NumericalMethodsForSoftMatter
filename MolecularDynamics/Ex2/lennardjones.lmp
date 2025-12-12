@@ -1,0 +1,59 @@
+# 1) Initialization
+units lj
+dimension 3
+atom_style atomic
+boundary p p p
+
+# 2) System definition
+region simbox block 0 7.93701 0 7.93701 0 7.93701
+create_box 1 simbox
+create_atoms 1 random 200 34134 simbox overlap 0.3
+
+# 3) Settings
+mass 1 1.0
+pair_style lj/cut 1.122
+pair_coeff 1 1 1.0 1.0
+pair_modify shift yes
+
+# 4) Monitoring
+thermo 10
+thermo_style custom step temp etotal pe ke
+
+# 5) Minimizer: Pre-run phase, just to find a non-overlapping state
+minimize 1.0e-6 1.0e-6 1000 10000
+
+# 6) Now we want to set the velocities according to a Maxwell-Bolztmann. We'll use a thermostat 
+fix equil all langevin 1.0 1.0 0.1 99999
+fix integrate all nve
+thermo 100
+run 5000
+
+# 6) Now we can turn off the thermostat
+unfix equil
+unfix integrate
+
+# 4) Monitoring
+thermo 50
+thermo_style custom step temp etotal pe ke
+dump mydmp all atom 100 dump.lammpstrj
+variable t      equal time      # Tempo simulato
+variable T      equal temp      # Temperatura
+variable V      equal pe        # Energia Potenziale
+variable K      equal ke        # Energia Cinetica
+variable E      equal etotal    # Energia Totale
+
+# 2. Usiamo fix ave/time per scrivere su file
+# Sintassi: fix ID all ave/time Nevery Nrepeat Nfreq v_nome1 v_nome2 ... file nomefile.dat
+# Nevery = 1    -> Campiona ogni step
+# Nrepeat = 1   -> Non fa media (prende il valore istantaneo)
+# Nfreq = 100   -> Scrive su file ogni 100 step
+
+
+# 5) Finally, run the MD simulation
+reset_timestep 0
+fix myEnergySave all ave/time 1 1 10 v_t v_T v_V v_K v_E file energy_data.dat
+compute myRDF all rdf 100
+fix calcRDF all ave/time 100 500 50000 c_myRDF[*] file rdf_data.dat mode vector
+fix mynve all nve
+timestep 0.005
+run 1000000

@@ -11,3 +11,8 @@
 *.nav
 *.snm
 *.vrb
+./MolecularDynamics/Ex1/data/
+./MolecularDynamics/Ex1/build/
+./MolecularDynamics/Ex2/data_from_lammps/
+./MolecularDynamics/Ex1/.vscode/
+./MolecularDynamics/Ex1/journal.md

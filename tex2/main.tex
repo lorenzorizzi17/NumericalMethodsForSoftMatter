@@ -1,0 +1,113 @@
+%\documentclass{article}
+%\usepackage{graphicx} % Required for inserting images
+
+%\documentclass[11pt,twoside]{book}
+
+\documentclass[11pt, twoside]{book}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+    
+\usepackage[svgnames,hyperref]{xcolor} 
+\usepackage{epsfig,graphicx}
+%\usepackage[mono=false]{libertine} % new linux font, ignore mono
+
+%\bibliographystyle{ieeetr}
+
+%\usepackage{luatex85}
+
+%\renewcommand{\baselinestretch}{1.05}
+\usepackage{amsmath,amsthm,amssymb,mathrsfs,amsfonts}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{multicol} % two-col ToC
+\usepackage{bm}
+\usepackage{imakeidx} % before hyperref
+\usepackage{hyperref}
+% link colors settings
+\hypersetup{
+    colorlinks=true,
+    citecolor=magenta,
+    linkcolor=blue,
+    filecolor=green,
+    urlcolor=cyan,
+    % hypertexnames=false,
+}
+%\usepackage[capitalise]{cleveref}
+%\usepackage{subcaption}
+%\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{subfiles}
+
+% adjust margin
+\usepackage[margin=2.3cm]{geometry}
+\headheight13.6pt
+
+% figures inside text
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --- Definizione dei colori (opzionale ma consigliata) ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% --- Stile del codice ---
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   % Colore di sfondo (toglilo se vuoi sfondo bianco)
+	commentstyle=\color{codegreen},       % Colore commenti
+	otherkeywords={std::vector},
+	keywordstyle=\color{blue},         % Colore keyword (int, float, class...)
+	numberstyle=\tiny\color{codegray},    % Stile numeri di riga
+	stringstyle=\color{codepurple},       % Colore stringhe
+	basicstyle=\ttfamily\footnotesize,    % Font monospaziato e dimensione
+	breakatwhitespace=false,         
+	breaklines=true,                      % Manda a capo le righe troppo lunghe
+	captionpos=b,                         % Posizione della caption (bottom)
+	keepspaces=true,                 
+	numbers=left,                         % Numeri di riga a sinistra
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=4                             % Dimensione tabulazione
+}
+
+% Attiva lo stile appena definito
+\lstset{style=mystyle}
+
+\newcommand{\CC}{\mathcal{C}}
+
+
+\title{Exercises NMSM 2025-2026}
+\author{Lorenzo Rizzi - 2156773}
+\date{December 2025}
+
+\begin{document}
+
+
+\setcounter{chapter}{1}
+\date{\today}
+
+
+\maketitle
+\tableofcontents
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\frontmatter
+
+
+%\mainmatter
+\input{EXER/ex1}
+\input{EXER/ex2}
+
+
+%\setcounter{chapter}{5}
+
+
+
+
+\end{document}
