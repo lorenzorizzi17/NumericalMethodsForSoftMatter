@@ -1,0 +1,100 @@
+\chapter*{Gillespie algorithm}
+\section{The Brusselator model}
+In this chapter we will implement the Gillespie algorithm to simulate the Brusselator model. The transition rates for a state $C =(X, Y)$ are given by:
+\begin{equation}
+	\begin{cases}
+		w_1 = a \Omega \mbox{ for } (X,Y)\to(X+1, Y) \\
+		w_2 = X \mbox{ for } (X,Y)\to(X-1, Y) \\
+		w_3 = \frac{1}{\Omega^2}X(X-1)Y \mbox{ for } (X,Y)\to(X+1, Y-1) \\
+		w_4 = bX \mbox{ for } (X,Y)\to(X-1, Y+1)
+	\end{cases}
+	\label{eq:Brusselator}
+\end{equation}
+Run some simulations using $a = 2, b = 5$ and for different volume sizes:$\Omega = 10^2, 10^3, 10?4$.
+
+\subsection{Mean field analysis}
+Before delving into the implementation and analysis of the Gillespie algorithm for the Brussellator, let us perform a mean-field analysis of the problem. This is equivalent to a simulation where no statistical fluctuations are allowed and the evolution of the intensive state variables $(x,y) = (\frac{X}{\Omega}, \frac{Y}{\Omega})$ is governed by a set of ODEs:
+\begin{equation}
+	\begin{cases}
+		\dot{x} = a - (b+1)x + x^2 y \\
+		\dot{y} = bx - x^2 y 
+	\end{cases}
+\end{equation}
+The fixed point of the system is defined by:
+\begin{equation}
+	\begin{cases}
+		0 = a - (b+1)x + x^2 y \\
+		0 = bx - x^2 y 
+	\end{cases}
+\end{equation}
+which implies $(x^*, y^*) = (a, \frac{b}{a})$. To evaluate the behavior of the system close to the fixed point, we will compute the jacobian:
+\begin{equation}
+	J(x^*, y^*) = 
+	\begin{pmatrix}
+		b-1 & a^2 \\
+		-b & -a^2
+	\end{pmatrix}
+\end{equation}
+its eigenvalues are:
+\begin{equation}
+	\lambda_{1,2} = \frac{b-1-a^2 \pm \sqrt{(b-1-a^2)^2-4a^2}}{2}
+\end{equation}
+The eigenvalues are real or complex according to the sign of $(b-1-a^2)^2 - 4a^2$. In fact,
+\begin{itemize}
+	\item Case 1 ($b -1 -a^2 < 2a$): the argument of the square root is negative, hence the eigenvalues are complex. The stability of the system depends on the real part: if $ b - 1-a^2 > 0$, then the fixed point is unstable. If $ b - 1-a^2 < 0$, the stationary state is stable and trajectories spirals around it until convergence.
+	\item Case 2 ($b -1 -a^2 > 2a$): the argument of the square root is positive. The eigenvalues are thus real. Rewriting the numerator as $(b-1-a^2) (1\pm\sqrt{1-\frac{4a^2}{(b-1-a^2)^2}})$ and since $b -1 -a^2 > 2a > 0$, both eigenvalues are positive, causing instability.
+\end{itemize}
+In conclusion, the stability of $(x^*, y^*)$ depends on $b < 1+a^2$. In this specific case, given $a = 2$ and $b = 5$ the system should converge to a \textit{limit cycle}. The real part of the eigenvalues is precisely zero, hindering an exponential decay away from or towards the fixed point. 
+
+\subsection{Gillespie algorithm}
+Now let's introduce the stochasticity implementing the Gillespie algorithm for the continuous time Markov chain defined by Eqs. \ref{eq:Brusselator}. A minimal version of the implemented code is proposed here:
+\begin{lstlisting}[language=python]
+	def brusselator_gillespie(Omega, a = 2.0, b = 5.0, t_max = 50.0):
+		# Initial value
+		X, Y, t = int(a * Omega), int(b * Omega), 0
+		T, X_hist, Y_hist = [0.0], [X], [Y]
+		
+		while t < t_max:
+			w1 = a * Omega
+			w2 = X
+			w3 = (1.0 / Omega**2) * X * (X - 1) * Y
+			w4 = b * X
+			W_tot = w1 + w2 + w3 + w4
+			
+			if W_tot == 0: break
+			# Extract the residence time
+			t += -np.log(np.random.random()) / W_tot
+			# Extract where to jump to
+			r = np.random.random() * W_tot
+			
+			if r < w1:
+				X += 1
+			elif r < w1 + w2:
+				X -= 1
+			elif r < w1 + w2 + w3:
+				X += 1; Y -= 1
+			else:
+				X -= 1; Y += 1
+			
+			T.append(t); X_hist.append(X); Y_hist.append(Y)
+		
+		return np.array(T), np.array(X_hist)/Omega, np.array(Y_hist)/Omega
+\end{lstlisting}
+In Fig.\ref{fig:BrusselatorTimeSeries} the time evolution of the state variable $x(t) = X(t)/\Omega, y(t) = Y(t)/\Omega$ are represented for three different choices of $\Omega \in [100, 1000, 10000]$. In Fig.\ref{fig:BrusselatorPortrair} the same plots are represented in the phase plane.
+
+For small values of $\Omega$, the system is dominated by statistical fluctuations. While the dynamics follows the general path of the limit cycle around the fixed point $(a, \frac{b}{a}) =(2, 2.5),$ it undergoes significant stochastic deviations. Consequently, the resulting limit cycle appears aperiodic, disordered and diffuse. As $\Omega$ increases, the time series becomes progressively more regular (once the initial transient phase has decayed) and settles onto a smooth, periodic limit cycle. The black line highlights the solution to the associated ODEs, representing the mean-field approximation. As expected, the stochastic simulation converges to this deterministic solution when $\Omega$ becomes large (i.e., approaching the thermodynamic limit where $X, \Omega \to \infty$ and $X / \Omega$ remains finite)
+
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.4]{./FIG/Brusselator_TimeSeries.pdf}
+	\caption{\textit{Time evolution for the state variable $x(t), y(t)$ when $\Omega = 10^2, 10^3, 10^4$. The black dotted lines indicate the mean-field solution for the Brusselator, obtained integrating the corresponding ODEs. When $\Omega$ is small, the oscillations are wild and irregular, but they follow the typical behavior of a limit cycle. As $\Omega$ increases, the trajectories collapse onto the mean-field solution as expected.}}
+	\label{fig:BrusselatorTimeSeries}
+\end{figure}
+
+\begin{figure}
+	\hspace{-2cm}
+	\includegraphics[scale = 0.415]{./FIG/Brusselator_PhaseSpace.pdf}
+	\caption{\textit{Same as in Fig. \ref{fig:BrusselatorTimeSeries} but viewed in the phase plane. The red dot is the fixed point, which is at the boundaries between stability and instability when $b = 5, a =2$ (Hopf bifuraction). Trajectories gravitate around the fixed point: smaller $\Omega$ implies irregular and rough orbits while larger $\Omega$ converge to the regular mean-field limit cycle (leftmost plot). }}
+	\label{fig:BrusselatorPortrair}
+\end{figure}
