@@ -2,8 +2,8 @@
 
 \section{Multiple Markov chain}
 
-We will consider of $N = 64$ identical particles in a $2$-dimensional square box of side $L$ with periodic boundary condition. We will not use $L = 6$ as suggested, since this will create an impossible configuration (there's no room to accomodate all $N$ particles); instead, we chose $L =16$, so that $\rho = 0.25$. 
-The pair interaction potential is the usual square-well volume excluding potential:
+We will consider of $N = 64$ identical particles in a $2$-dimensional square box of side $L$ with periodic boundary condition. We will not use $L = 6$ as suggested, since this will create an impossible configuration (there's no room to accomodate all $N$ particles); instead, we choose $L =16$ so that $\rho = 0.25$. 
+The pair interaction potential is the usual square-well volume-excluding potential:
 \begin{equation}
 	U(r) = 
 	\begin{cases}
@@ -14,28 +14,29 @@ The pair interaction potential is the usual square-well volume excluding potenti
 \end{equation}
 where $R_c = 1, \varepsilon = 1, R_a = 1.5$ and $k_B = 1$.
 
-In this first task, we will implement a Metropolis Monte Carlo algorithm for this system to simulate in parallel replicas of the system
-at different inverse temperatures:
+In this first task, we will implement a Monte Carlo Metropolis algorithm to simulate parallel chains for the $N$ particles system at different inverse temperatures:
 $$
 \beta \in \{1, 1.2, 1.4, 1.6,  1.8, 2, 2.2, 2.4\}\footnote{The temperatures used here are different from the one proposed in the homework assignment. This is because the system where $L =16$ undergoes a phase transition when $T \approx 0.6$ or $\beta \approx 1.6$}.
 $$
 
-Within each chain, the particles move through single-particle displacements. Moves that produce overlaps $r < R_c$ are automatically rejected, otherwise they are accepted with the Metropolis rule. Every $n_{swap}$ sweeps
-(where a sweep corresponds to $N$ attempted single moves in each of the $K = 8$ Markov chains), attempt a swap of configurations between randomly picked neighboring replicas $k$ and $k + 1$, with acceptance probability as to fulfill detailed balance for the joint probability density functions of all $8$ systems.
+Within each chain, particles move through single-particle displacements. Moves that produce overlaps $r < R_c$ are automatically rejected, otherwise they are accepted according to the Metropolis rule. Every $n_{swap}$ sweeps
+(where a sweep corresponds to $N$ attempted single moves in each of the $K = 8$ Markov chains), we will propose a swap of configurations between randomly picked neighboring replicas $k$ and $k + 1$, with acceptance probability defined as to fulfill detailed balance for the joint probability density functions of all $8$ systems.
 
 \paragraph{Code implementation}
 The vast majority of the code for this assignment was simply copied from the codebase of Exercise 1: The Hard Sphere model (where the interaction range was set to $R_a = 1.5$). Instead of launching just one Markov chain, we spawn a set of $K = 8$ threads that will each run an independent instance of a Markov chain with a specific temperature $\beta$. Each thread will run in parallel with the others until $n_{swap}$ steps have been performed. When this happens, all thread synchronize and the master thread will handle the Metropolis swap between two randomly selected configurations. 
 
-Let us first verify as a sanity check that adding the parallel tempering procedure provides stable and reasonable results. In Fig.\ref{fig:HistogramsParallelTempering} we illustrate the potential energy histograms and trace plots for $3$ distinct values of $\beta$ ($1.2, 1.6, 2.2$, meaning $T \approx 0.83, 0.625, 0.45$), with and without parallel tempering. The total number of MC steps is set to $N_{MC} = 10^6$ and $n_{sweep} = 1000$, so that, on average, each configuration will stay at a fixed temperature for about $8000$ MC steps and should experience $\approx 100$ swaps during a full run.
+Let us first verify as a sanity check that adding the parallel tempering procedure yields stable and reasonable results. In Fig.\ref{fig:HistogramsParallelTempering} we illustrate the potential energy histograms and trace plots for $3$ distinct values of $\beta$ ($1.2, 1.6, 2.2$, meaning $T \approx 0.83, 0.625, 0.45$), with and without parallel tempering. The total number of MC steps is set to $N_{MC} = 10^6$ and $n_{sweep} = 1000$, so that, on average, each configuration will stay at a fixed temperature for about $8000$ MC steps and should experience $\approx 100$ swaps during a full run.
 
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.55]{./FIG/Energy_Histograms.pdf}
-	\caption{\textit{efwf}}
+	\caption{\textit{Histograms (on the left) and trace plots (on the right) for the (potential) energy per particle at three different temperatures ($\beta = 1.2, 1.6, 2.2$). At such high temperatures, the parallel tempering procedure yields similar results with respect to a Monte Carlo simulations with $K$ non-communicating chains. The energy histograms closely reproduce the expected gaussian behavior and the trace plots demonstrates that both algorithm are correctly exploring the energy space under the expected equilibrium distribution.}}
 	\label{fig:HistogramsParallelTempering}
 \end{figure}
 
-Having a closer look at Fig.\ref{fig:HistogramsParallelTempering}, one can easily see that the histograms and trace plots obtained using parallel tempering are quite identical (up to normal stochastic fluctuations) to the one generated by single independent Markov chains (obtained by setting $n_{sweep} = N_{MC}$), confirming that the implementation of the algorithm was successful. Furthermore, both algorithms converge nicely to the target distribution (in this case, the joint PDF for all Markov chains) as indicated by the initial transient in the $\beta = 2.2$ panel, hence we are effectively producing equilibrated samples at a fixed temperature. The reasons why we don't see any difference is because the temperatures here are still sufficiently high and there is no significative benefit in using parallel tempering against standard Metropolis (we will explore the low temperatures regime in the next paragraph). 
+Having a closer look at Fig. \ref{fig:HistogramsParallelTempering}, one can easily see that the histograms and trace plots obtained using parallel tempering are quite similar (up to normal stochastic fluctuations) to the one generated by single independent Markov chains (obtained by setting $n_{sweep} = N_{MC}$), confirming that the implementation of the algorithm was successful. Furthermore, both algorithms converge nicely to the target distribution (in this case, the joint PDF for all Markov chains) as can be easily seen by the initial transient in the $\beta = 2.2$ panel. In conclusion, we can claim that we are effectively producing equilibrated samples at a fixed temperature.
+
+The reasons we don't see any difference between with and without parallel tempering is because the temperatures here are still sufficiently high and there is no significative benefit in using parallel tempering against standard Metropolis at such temperatures (we will explore the low temperatures regime in the next paragraph). 
 
 \paragraph{Energy and specific heat}
 Now that we have multiple samples extracted from the equilibrium Boltzmann distribution at different $\beta_k$, we can compute various observables of interest such as the potential energy per particle $U/N$ and the specific heat per particle $C/N$\footnote{As highlighted in the first chapter, a MC simulation can only "sample" the configurational phase space of the system, since we are totally neglecting the momenta phase space dynamics. When we talk about energy, we are actually referring to the \textit{potential energy}. The specific heat is thus computed as a measure of fluctuations over the \textit{potential energy} distribution and not on the full energy distribution. However, this is not a problem as far as we're concerned: if we are looking for a divergence in the specific heat and we don't care about the correct numerical values, then considering only $U$ should be enough, because the critical singularity is due to the fact that the system suddenly changes geometry (from disordered gas to ordered fluid) and this can be seen by inspecting the potential energy.}. Results are shown in Fig. \ref{fig:EnergySpecificHeatPT}
@@ -43,7 +44,7 @@ Now that we have multiple samples extracted from the equilibrium Boltzmann distr
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.5]{./FIG/Energy_SpecificHeat_PT.pdf}
-	\caption{\textit{ed}}
+	\caption{\textit{Potential energy per particle (left) and specific heat per particle (right) with and without parallel tempering. Again, it's hard to notice any significative difference between the two curves, but small inconsistencies seem to appear in the specific heat plot when $T$ is the lowest in the chosen interval ($T \approx 0.4$). The specific heat plot provides hint about a phase transition occurring at $T_c \approx 0.55$, signaled by the peak at that value.}}
 	\label{fig:EnergySpecificHeatPT}	
 \end{figure}
 
@@ -53,15 +54,15 @@ We can use OVITO as we did in the previous sections to visually inspect some con
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.1]{./FIG/beta2.2_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta2.4_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta2.0_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta1.8_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta1.6_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta1.4_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta1.2_Swap}
-	\includegraphics[scale = 0.1]{./FIG/beta1.0_Swap}
-	\caption{\textit{edec}}
+	\includegraphics[scale = 0.2]{./FIG/beta2.2_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta2.4_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta2.0_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta1.8_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta1.6_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta1.4_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta1.2_Swap}
+	\includegraphics[scale = 0.2]{./FIG/beta1.0_Swap}
+	\caption{\textit{Snapshots provided by \texttt{OVITO} at temperatures (starting from the top left angle): $\beta = 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0$. When the temperature is low, particles prefer to form dense cluster(s) (liquid). On the contrary, when $T$ is high enough, the disorder phase is more stable and the system behaves as a gas. Bonds are indicated by blue lines and join any pair of particles whose distance is less than $R_c = 1.5$.}}
 	\label{fig:OVITOPT}
 \end{figure}
 
@@ -82,14 +83,14 @@ $$
 	\item Chain 6 ($\beta=2.2$): 121 swaps.
 	\item Chain 7 ($\beta=2.4$): 69 swaps.
 \end{itemize}
-The swap rate is satisfactory. Each chain experienced an average of $\approx 80$ swaps whose length was about $10^6 / 80 \approx 12000$ Monte Carlo steps each. At a first glance, there seems to be a significative imbalance between the number of swaps at each value of $\beta$. However, this can be easily explained by considering that, in our implementation of the parallel tempering algorithm, we only swap between neighboring temperatures, penalizing extreme values ($\beta = 1, \beta = 2.4$) that only experience about half of the expected number of swaps. But there's more: when $\beta = 1.6$, the number of exchanges is at its lowest (ignoring border values). This might seem strange at first, considering that the Metropolis acceptance probability depends on $\Delta \beta$ which is fixed here. However, one should not forget that it also depends n $\Delta E$, i.e. the energy difference between configurations. Around the critical point, it might happen that the two candidate configurations are in two different phases, one liquid the other one gaseous, hence $\Delta E$ is larger compared to chains where $\beta$ is far from the critical point (and both configurations are in the same phase). 
+The swap rate is satisfactory. Each chain experienced an average of $\approx 80$ swaps whose length is about $10^6 / 80 \approx 12000$ Monte Carlo steps. At a first glance, there seems to be a significative imbalance between the number of swaps at each value of $\beta$. However, this can be easily explained by considering that, in our implementation of the parallel tempering algorithm, we only swap between neighboring temperatures, penalizing extreme values ($\beta = 1, \beta = 2.4$) that only experience about half of the expected number of swaps. But there's more: when $\beta = 1.6$, the number of exchanges is at its lowest (ignoring border values). This might seem strange at first, considering that the Metropolis acceptance probability depends on $\Delta \beta$ which is fixed here. However, one should not forget that it also depends on $\Delta E$, i.e. on the energy difference between configurations. Around the critical point, it might happen that the two neighboring configurations are in two different phases, one liquid the other one gaseous, hence $\Delta E$ is larger compared to chains where $\beta$ is far from the critical point (and both configurations are in the same phase). 
 
 In Fig.\ref{fig:PathPT}, we can appreciate the swaps taking place from the perspective of a fixed Markov chain (defined according to the initial temperature). The parallel tempering algorithm allows the diffusion of each configuration over time from cold to hot conditions and back.
 
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.55]{./FIG/TemperaturePaths.pdf}
-	\caption{\textit{ioin}}
+	\caption{\textit{An illustration of the configuration exchanges produced by the parallel tempering algorithm. The horizontal axis represents the number of elapsed MC steps whereas the vertical one represents inverse temperatures. The figure depicts three distinct chains (whose initial temperatures were $\beta = 1.0$ (top), $\beta = 1.6$ (medium), $\beta = 2.0$ (bottom)). During the simulation, those configurations explore all of the possible temperatures (from hot to cold).}}
 	\label{fig:PathPT}
 \end{figure}
 
@@ -97,28 +98,28 @@ In Fig.\ref{fig:PathPT}, we can appreciate the swaps taking place from the persp
 
 
 \paragraph{Low temperatures regime}
-Up until now, there was no reason to believe parallel tempering can actually be superior with respect to the usual Metropolis algorithm when it comes to sample from Boltzmann equilibrium distributions. In Fig. \ref{fig:HistogramsParallelTempering}, both procedures (with and without parallel tempering) seem to reproduce the same curve, up to statistical errors. Let's see what happens when the chosen temperatures $\beta_k$ are lower than before:
+Up until now, there was no reason to believe parallel tempering can actually be superior with respect to the usual Metropolis algorithm when it comes to sample from Boltzmann equilibrium distributions. In Fig. \ref{fig:HistogramsParallelTempering}, both procedures (with and without parallel tempering) seem to reproduce the same curves, up to statistical errors. Let's see what happens when the chosen temperatures $\beta_k$ are lower than before:
 $$
 \beta \in \{4,5,6,7,8,9,10,11\}
 $$
-Results concerning energy histograms and trace plots are shown in Fig.\ref{fig:HistogramsLowt}. When $\beta = 4 (T = 0.25)$, there still is no sensible difference when using parallel tempering. However, a completely different scenario emerges when $\beta = 8$ or $\beta = 11$ (corresponding to $T = 0.125$, $T = 0.09$). Both simulations seem to have found a stationary state, i.e. a minimum of the free energy, even though the average (potential) energy per particle is definitely not the same. What's the reason behind this strange behavior? Why is the average energy per particle lower when parallel tempering is used?
+Results concerning energy histograms and trace plots are shown in Fig.\ref{fig:HistogramsLowt}. When $\beta = 4 \> (T = 0.25)$, there still is no sensible difference when using parallel tempering. However, a completely different scenario emerges when $\beta = 8$ or $\beta = 11$ (corresponding to $T = 0.125$, $T = 0.09$). Both simulations seem to have found a stationary state, i.e. a minimum of the free energy, even though the average (potential) energy per particle is definitely not the same. What's the reason behind this strange behavior? Why is the average energy per particle lower when parallel tempering is used?
 
-The reason is that, when $T$ is extremely low, the free energy landscape becomes particularly complex. Imagine a configuration where particles are distributed in two distinct but similar clusters (or droplets). This is not yet the equilibrium configuration, but rather a \textit{metastable state}. To further decrease the energy (which is essential in the low $T$ regime, where the entropic term is negligible), the system should make the two droplets merge. For this to happen, particles on the boundary of one cluster should evaporate and then attach to the other droplet. The difference in energy associated to the evaporation of an external particle is about $\Delta E = -3$ ($3$ particles on one side, none on the other). When $\beta = 8$, for example, the associated Metropolis acceptance rate for this move is $\exp(-3 \cdot 8) = \exp(-24) \approx 10^{-11}$. Hence, if the system collapses into one of these multi-cluster metastable states, the usual Metropolis algorithm is unable to nudge away from these configurations. This is also called \textit{quasi-ergodicity}, i.e. the fact that a small portion of the phase space is explored but never abandoned to reach other relevant portions because the intermediate states are very unlikely. 
+The reason is that, when $T$ is extremely low, a phenomena called \textit{quasi-ergodicity} appears. Imagine a configuration where particles are distributed in two distinct but similar clusters (or droplets). This is not yet the equilibrium configuration, but rather a \textit{metastable state}. To further decrease the energy (which is essential in the low $T$ regime, where the entropic term is negligible), the system should make the two droplets merge (less surface area). For this to happen, particles on the boundary of one cluster should evaporate and then attach to the other droplet. The difference in energy associated to the evaporation of an external particle is about $\Delta E = -4$ (assuming $4$ particles on one side, none on the other). When $\beta = 8$, for example, the associated Metropolis acceptance rate for this move is $\exp(-4 \cdot 8) = \exp(-32) \approx 10^{-14}$. Hence, if the system collapses into one of these multi-cluster metastable states, the usual Metropolis algorithm is unable to nudge away from these configurations. This is precisely what \textit{quasi-ergodicity} is, i.e. the fact that a small portion of the phase space is explored but never abandoned to reach other relevant (and more stable) portions because the intermediate states are very unlikely. 
 
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.55]{./FIG/Energy_Histograms_LowT}
-	\caption{\textit{ded}}
+	\caption{\textit{Histograms (on the left) and trace plots (on the right) for the (potential) energy per particle at three different temperatures ($\beta = 4, 8, 11$). At variance with Fig. \ref{fig:HistogramsParallelTempering}, the curves and the histograms obtained using parallel tempering are different from those obtained without it.}}
 	\label{fig:HistogramsLowt}
 \end{figure}
 
-With parallel tempering, this problem is solved by frequently switching configurations (provided this swapping rule obeys detailed balance). The system should now be able to relax to low energy states, as it should be in the low temperature regime. In Fig.\ref{fig:comparaison}, this difference is illustrated with two snapshots coming from the same $\beta$ with and without parallel tempering.
+With parallel tempering, this problem is solved by frequently switching configurations (provided this swapping rule obeys detailed balance). The system should now be able to relax to low energy states with a single cluster, as it should be in the low temperature regime. In Fig.\ref{fig:comparaison}, this difference is illustrated with two snapshots coming from the same $\beta$ with and without parallel tempering.
 
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.255]{./FIG/PT}
 	\includegraphics[scale = 0.2]{./FIG/NoPT}
-	\caption{\textit{ec}}
+	\caption{\textit{Snapshots extracted from \texttt{OVITO} from a run with $\beta = 11$ with parallel tempering (left) and without (right). When employing parallel tempering, particles organize themselves in a single low-energy cluster. On the contrary, the left panel depicts a scenario where two (or multiple) clusters have emerged (a local minima of the free energy). The system would like to relax dissipating energy and reach the minimum of the energy (a single cluster), but the usual Metropolis acceptance rate strongly suppresses the probability of such a relaxation to happen}}
 	\label{fig:comparaison}
 \end{figure}
 
@@ -127,12 +128,12 @@ Let's plot the average (potential) energy per particle and the specific heat per
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.5]{./FIG/Energy_SpecificHeat_LowT.pdf}
-	\caption{\textit{ced}}
+	\caption{\textit{Potential energy per particle (left) and specific heat per particle (right) with and without parallel tempering at low temperatures. The difference between parallel tempering and standard Metropolis is now much more evident, especially in the cold region of the average energy plot. An intense peak can be seen when $T \approx 0.2$, suggesting another phase transition}}
 	\label{fig:energy_lowT}
 \end{figure}
-The supremacy of parallel tempering is now much more evident. The green line (no parallel tempering) is completely wrong when $T < 0.22$; the correct behavior is recovered only by the blue line. An interesting feature that can be observed by inspecting Fig.\ref{fig:comparaison} is that the specific heat displays a new peak around $T \approx 0.2$.
+The supremacy of parallel tempering is now much more evident. The green line (no parallel tempering) is completely wrong when $T < 0.2$; the correct behavior is recovered only by the blue line. An interesting feature that can be observed by inspecting Fig.\ref{fig:comparaison} is that the specific heat displays a new peak around $T \approx 0.2$.
 
-This should be caused by a brand new phase transition, from a cluster liquid phase to a \textit{cluster crystalline structure}. Particles are still trapped in dense clusters, but now they arrange in a rigid crystalline structure which is denser and that further decreases the potential energy of the system (Fig.\ref{fig:secondPhaseTransition})
+This should be caused by a brand new phase transition, from a clustered liquid phase to a \textit{clustered crystalline structure}. Particles are still trapped in dense clusters, but now they arrange in a rigid crystalline structure which is even denser and that further decreases the potential energy of the system (Fig.\ref{fig:secondPhaseTransition})
 
 \begin{figure}
 	\centering
@@ -140,16 +141,103 @@ This should be caused by a brand new phase transition, from a cluster liquid pha
 	\includegraphics[scale = 0.14]{./FIG/beta4.0}
 	\includegraphics[scale = 0.14]{./FIG/beta5.0}
 	\includegraphics[scale = 0.14]{./FIG/beta6.0}
-	\vspace{5pt}
+	\vspace{1cm}
 	\includegraphics[scale = 0.14]{./FIG/beta7.0}
 	\includegraphics[scale = 0.14]{./FIG/beta8.0}
 	\includegraphics[scale = 0.14]{./FIG/beta9.0}
 	\includegraphics[scale = 0.14]{./FIG/beta10.0}
-	\caption{\textit{edec}}
+	\caption{\textit{Snapshots provided by \texttt{OVITO} at temperatures (starting from the top left angle): $\beta = 3,4,5,6,7,8,9,10$. When $\beta < 5$, particles form "disordered" clusters; at even lower temperatures, particles organize themselves in even denser and strongly interconnected clusters which resembles real crystalline structures. Each particles is surrounded by a fixed amount of particles ($8$) apart from the one lying at the boundary.}}
 	\label{fig:secondPhaseTransition}
 \end{figure}
 
-We can clearly see that particles now form densely-packed clusters where every atom has $8$ neighbors (i.e. a \textit{crystal}). When $T \to 0$, this would mean that we should observe a potential energy of $U/N = -4$, which is not the case as depicted in Fig.\ref{fig:energy_lowT}. This is simply due to a finite size effect: particles located at the borders cannot create bonds with $8$ neighbors, hence increasing by a small amount the total energy of the system\footnote{When $N\to\infty$, the number of border particles become negligible when compared to the number of bulk particles, so we should be able to asymptotically reach $U(T = 0) = -4$ performing a thermodynamic limit.}
+We can clearly see that particles now form densely-packed clusters where every atom has $8$ neighbors (i.e. a \textit{crystal})\footnote{Indeed, this is the best way to cover a plane with circles reducing the total surface}. When $T \to 0$, this would mean that we should observe a potential energy of $U/N = -4$, which is not the case as depicted in Fig.\ref{fig:energy_lowT}. This is simply due to a finite size effect: particles located at the borders cannot create bonds with $8$ neighbors, hence they contribute to increase by a small amount the total energy of the system. When $N\to\infty$, the number of border particles become negligible when compared to the number of bulk particles, so we should be able to asymptotically reach $U(T = 0) = -4$ performing a thermodynamic limit.
 
 
 \section{Multiple Histogram Method (MHM)}
+Let us now implement the Multiple Histogram Method building on the data generated by the Multiple Markov Chains. The code for the MHM was written in Python, for the sake of simplicity and is intended as a post-processing of the more computationally expensive Markov chains simulations.
+
+The key idea behind this method is to recognize that there exists a physical quantity called \textit{energy density} $\rho(E)$ which is an intrinsic property of the system and does not depend on the temperature or on other control parameters. In fact, given $P_k(E)$ the probability of observing a microstate with energy $E$ in a system with temperature $\beta_k$, then, in the canonical ensemble:
+$$
+P_k(E) =\frac{1}{Z_k} \rho(E)\exp(-\beta_k E) = \frac{\rho(E) \exp(-\beta_k E)}{\sum_E \exp(-\beta_k E)}
+$$
+When running $K$ parallel but distinct Markov chains, we obtain $K$ independent formulas for $\rho(E)$:
+$$
+\rho(E) = Z_k P_k(E) \exp(\beta_k E)
+$$
+We stress the fact that the LHS must not depend on $k$. The energy density is a property of the system and depends only on its Hamiltonian.
+
+However, we do not have access to the true $P_k(E)$ and can only estimate it through:
+$$
+P_k(E) \approx \frac{N_k(E)}{M_k}
+$$
+where $N_k(E)$ is the number of sampled configuration in the $k$-th chain whose energy is precisely $E$ and $M_k$ is the total number of samples (normalization constraint). Putting it all together, we obtain $K$ independent estimate of $\rho(E)$:
+$$
+\hat \rho_k(E) = Z_k \frac{N_k(E)}{M_k} \exp(\beta_k E)
+$$
+How can we combine the $K$ estimate in order to get a more robust and reasonable estimate of $\rho(E)$? According to the MHM, the best combination is given by:
+\begin{equation}
+	\hat \rho(E) = \frac{\sum_k N_k(E)}{\sum_k M_k Z_k^{-1}\exp(-\beta_k E)}
+	\label{eq:rhoE}
+\end{equation}
+Still, we don't know the partition functions $Z_k$. They can be obtained imposing a self-consistency equation:
+\begin{equation}
+	Z_j = \sum_E \frac{\sum_i N_i(E)}{\sum_j M_j Z_j^{-1}\exp((\beta_k - \beta_j)E)}
+	\label{eq:Z}
+\end{equation}
+that can be solved numerically invoking the fixed point theorem.
+
+The first thing we need to do is to retrieve the numerical values for $N_k(E_i)$\footnote{Energy is not a continuous variable in a finite simulation, hence we need to bin the energy intervals $[E_i, E_{i+1}]$}. A plot representing all $K = 8$ energy histograms is shown in Fig.\ref{fig:energyHisto}: in order for the MHM to work, we need partial overlaps between histograms and this is enforced by parallel tempering.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.45]{./FIG/HistogramsMHM.pdf}
+	\caption{\textit{Energy histograms for $K = 8$ coupled Markov chains at different temperature (not normalized, $N_k(E)$). In the canonical ensemble, energy is free to fluctuate and the entity of the fluctuations of $P(E)$ is connected to the specific heat of the system. Indeed, the histogram associated to $\beta = 1.6$ (close to the critical point $T \approx 0.55$) is the one with the largest variance. }}
+	\label{fig:energyHisto}
+\end{figure}
+
+\subsection{Energy density and temperature}
+Once we solve numerically Eq. \ref{eq:Z}, we can compute the energy density (its estimate, averaged over $K=8$ independent runs) through Eq. \ref{eq:rhoE}. Results for $\log(\rho(E))$ vs. $E/N$ are reported in Fig.\ref{fig:entropy}. 
+
+It's important to note that the numerical scale for $\rho(E)$ has no physical significance and depends on how we normalized the partition functions across the numerical evaluation of the fixed point. In particular, to enforce numerical stability and avoid overflows, a varying shift was considering:
+$$
+\log(A) = -\frac{1}{2}(\min_k\log(Z_k)+\max_k\log(Z_k))
+$$
+Still, Fig.\ref{fig:entropy} is precious and provides confirmation of the validity of the algorithm. In fact, regardless of the specific numerical value, the curve for $\rho(E)$ grows as $E$ gets larger. This means that, as $E$ grows,\footnote{This argument should be carried out in the microcanonical ensemble, where $E$ is fixed} the system is able to explore more and more configurations that were unaccessible before
+
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.45]{./FIG/Entropy.pdf}
+	\caption{\textit{Logarithm of the energy density versus energy per particle. The scale has no physical relevance since it was arbitrarily chosen}}
+	\label{fig:entropy}
+\end{figure}
+
+In addition, the energy density allows us to compute the temperature of the system and perform yet another sanity check. In fact, in a microcanonical ensemble\footnote{This assumption is crucial: energy is conserved only in the microcanonical ensemble. The formula for the entropy holds true in the canonical ensemble, but it wouldn't make sense to consider a fixed energy $E$ since it oscillates. Indeed, in Fig.\ref{fig:entropy2}, we only consider the peak of the histogram (which corresponds to $\langle E \rangle$) and simply interpret this value as if it were the microcanonical energy of the system}:
+$$
+S(E)\propto \log(\rho(E))
+$$
+so that Fig.\ref{fig:entropy} can also be interpreted as the entropy curve of the system $S(E)$ (omitting a constant term which would only fix the unit of measurement of $S$). By definition,
+$$
+\beta = \frac{\partial S}{\partial E}
+$$
+Let us proceed as follows. From Fig.\ref{fig:entropy}, we compute the numerical derivative ($\Delta S / \Delta E$) to obtain $\hat\beta(E)$. From Fig.\ref{fig:energyHisto}, we isolate the average energy $\langle E \rangle$\footnote{Out of simplicity, we chose the mode of the distribution. Under the assumption that the energy PDF is gaussian, there is no difference between mean and mode} associated to every simulated $\beta_k$, $\langle E \rangle (\beta_k)$. We substitute this energy value into $\hat\beta(E)$ and verify whether $\hat\beta(\langle E \rangle (\beta_k)) \approx \beta_k$. Results are shown in Fig.\ref{fig:entropy2} and are in perfect agreement with our expectations.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.45]{./FIG/DerivLogDensityMHM.pdf}
+	\caption{\textit{The blue dotted line in the lower region of the plot represents the temperature curve $\hat \beta(E)$ computed as a numerical derivated of $S(E)$ in Fig. \ref{fig:entropy}. In the upper region, we represented the energy histogram represented in Fig. \ref{fig:energyHisto} (the y axis has no meaning for the histograms). The idea is that we can extrapolate the mode (or average) potential energy for each one of the histograms (dotted vertical lines), crossing it with the $\hat \beta$ curve and extract the estimate of the temperature $\hat \beta (\langle U\rangle)$ (practically speaking, the projection on the y-axis). The projected (inverse) temperatures are represented in the legend and are in close agreement with the true value $\beta = \{1,1.2,1.4,1.6,1.8,2,2.2,2.4\}$}}
+	\label{fig:entropy2}
+\end{figure}
+
+\subsection{Energy and specific heat}
+The great strength of MHM is that it allows us to compute thermal averages at an arbitrary temperature $\beta$, even those that we do not have directly simulated:
+\begin{equation}
+	\langle O \rangle_\beta = \frac{\sum_E O(E)\rho(E)\exp(-\beta E)}{\sum_E \rho(E)\exp(-\beta E)}
+\end{equation}
+Continuous curves for the (potential) energy per particle and the specific heat per particle are reported in Fig.\ref{fig:energySpecificHeat}. They are in nice agreement with the previous results. Hence, the MHM allowed us to obtain accurate and smooth curves for thermal averages extracting all of the information hidden in the $K = 8$ parallel and independent Markov chains.
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.45]{./FIG/Energy_SpecificHeat_MHM.pdf}
+	\caption{\textit{The blue continuous line represents the Multiple Histogram interpolation discussed in the section whereas the red dots are the empirical results obtained when running $K = 8$ independent run. Overall, the curves seem to nicely interpolate between MMC data, especially for the energy plot. One could have inserted the error bars associated to each of the empirical measurement. This is however tricky, because the usual formula $\sigma / \sqrt{N}$ won't make sense ($N = 100000$, the error is absurdily small). We should first evaluate the integrated autocorrelation time for the chains to evaluate correctly the errors, as we already did in one of the previous chapters.}}
+	\label{fig:energySpecificHeat}
+\end{figure}
