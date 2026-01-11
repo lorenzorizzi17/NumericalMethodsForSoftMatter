@@ -1,6 +1,6 @@
 \chapter{Multiple Markov chains and the Multiple Histogram Method}
 
-\section{Multiple Markov chain}
+\section{Multiple Markov chains}
 
 We will consider of $N = 64$ identical particles in a $2$-dimensional square box of side $L$ with periodic boundary condition. We will not use $L = 6$ as suggested, since this will create an impossible configuration (there's no room to accomodate all $N$ particles); instead, we choose $L =16$ so that $\rho = 0.25$. 
 The pair interaction potential is the usual square-well volume-excluding potential:
@@ -25,7 +25,7 @@ Within each chain, particles move through single-particle displacements. Moves t
 \paragraph{Code implementation}
 The vast majority of the code for this assignment was simply copied from the codebase of Exercise 1: The Hard Sphere model (where the interaction range was set to $R_a = 1.5$). Instead of launching just one Markov chain, we spawn a set of $K = 8$ threads that will each run an independent instance of a Markov chain with a specific temperature $\beta$. Each thread will run in parallel with the others until $n_{swap}$ steps have been performed. When this happens, all thread synchronize and the master thread will handle the Metropolis swap between two randomly selected configurations. 
 
-Let us first verify as a sanity check that adding the parallel tempering procedure yields stable and reasonable results. In Fig.\ref{fig:HistogramsParallelTempering} we illustrate the potential energy histograms and trace plots for $3$ distinct values of $\beta$ ($1.2, 1.6, 2.2$, meaning $T \approx 0.83, 0.625, 0.45$), with and without parallel tempering. The total number of MC steps is set to $N_{MC} = 10^6$ and $n_{sweep} = 1000$, so that, on average, each configuration will stay at a fixed temperature for about $8000$ MC steps and should experience $\approx 100$ swaps during a full run.
+Let us first verify as a sanity check that adding the parallel tempering procedure yields stable and reasonable results. In Fig. \ref{fig:HistogramsParallelTempering} we illustrate the potential energy histograms and trace plots for $3$ distinct values of $\beta$ ($1.2, 1.6, 2.2$, meaning $T \approx 0.83, 0.625, 0.45$), with and without parallel tempering. The total number of MC steps is set to $N_{MC} = 10^6$ and $n_{sweep} = 1000$, so that, on average, each configuration will stay at a fixed temperature for about $8000$ MC steps and should experience $\approx 100$ swaps during a full run.
 
 \begin{figure}
 	\centering
@@ -48,7 +48,7 @@ Now that we have multiple samples extracted from the equilibrium Boltzmann distr
 	\label{fig:EnergySpecificHeatPT}	
 \end{figure}
 
-The average potential energy of the system decreases monotonically as the temperature gets lower, as expected. The specific heat plot reveals a phase transition around $T \approx 0.55$. This corresponds to a liquid-gas phase transition: when the temperature is high enough (above the critical value, which is defined only in the thermodynamic limit), the particles have sufficient thermal energy to travel freely in the square box in a disordered gas phase. The residual energy we observe (for $T \to \infty$) is simply due to the finiteness of the box, forcing particles to interact temporarily (Van der Waals interactions). On the contrary, when $T < T_c$ the energy drops down and it's more thermodynamically favorable for the system to condense and form denser cluster of liquid where particles are permanently surrounded by other particles.
+The average potential energy of the system decreases monotonically as the temperature gets lower, as expected. The specific heat plot reveals a phase transition around $T \approx 0.55$. This corresponds to a liquid-gas phase transition: when the temperature is high enough (above the critical value, which is defined only in the thermodynamic limit), the particles have sufficient thermal energy to travel freely in the square box in a disordered gas phase. The residual energy we observe (for $T \to \infty$) is simply due to the finiteness of the box, forcing particles to interact temporarily (Van der Waals interactions; this is the same argument discussed in Chapter 1). On the contrary, when $T < T_c$ the energy drops down and it's more thermodynamically favorable for the system to condense and form denser cluster of liquid where particles are permanently surrounded by other particles.
 
 We can use OVITO as we did in the previous sections to visually inspect some configurations at different temperature and verify whether a phase transition is really occurring (Fig.\ref{fig:OVITOPT}). As expected, when $\beta$ is high (low $T$) the system evolves towards liquid configurations, where particles cluster together in droplets. As $\beta$ decreases, those droplets become more and more "fuzzy" (coexistence region, stable liquid droplets coexist with a stable disordered gas) until a totally gaseous phase is reached.
 
@@ -62,7 +62,7 @@ We can use OVITO as we did in the previous sections to visually inspect some con
 	\includegraphics[scale = 0.2]{./FIG/beta1.4_Swap}
 	\includegraphics[scale = 0.2]{./FIG/beta1.2_Swap}
 	\includegraphics[scale = 0.2]{./FIG/beta1.0_Swap}
-	\caption{\textit{Snapshots provided by \texttt{OVITO} at temperatures (starting from the top left angle): $\beta = 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0$. When the temperature is low, particles prefer to form dense cluster(s) (liquid). On the contrary, when $T$ is high enough, the disorder phase is more stable and the system behaves as a gas. Bonds are indicated by blue lines and join any pair of particles whose distance is less than $R_c = 1.5$.}}
+	\caption{\textit{Snapshots provided by \texttt{OVITO} at temperatures (starting from the top left angle and proceeding to the right, starting again from the bottom left angle): $\beta = 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0$. When the temperature is low, particles prefer to form dense cluster(s) (liquid). On the contrary, when $T$ is high enough, the disorder phase is more stable and the system behaves as a gas. Bonds are indicated by blue lines and join any pair of particles whose distance is less than $R_c = 1.5$.}}
 	\label{fig:OVITOPT}
 \end{figure}
 
@@ -85,7 +85,7 @@ $$
 \end{itemize}
 The swap rate is satisfactory. Each chain experienced an average of $\approx 80$ swaps whose length is about $10^6 / 80 \approx 12000$ Monte Carlo steps. At a first glance, there seems to be a significative imbalance between the number of swaps at each value of $\beta$. However, this can be easily explained by considering that, in our implementation of the parallel tempering algorithm, we only swap between neighboring temperatures, penalizing extreme values ($\beta = 1, \beta = 2.4$) that only experience about half of the expected number of swaps. But there's more: when $\beta = 1.6$, the number of exchanges is at its lowest (ignoring border values). This might seem strange at first, considering that the Metropolis acceptance probability depends on $\Delta \beta$ which is fixed here. However, one should not forget that it also depends on $\Delta E$, i.e. on the energy difference between configurations. Around the critical point, it might happen that the two neighboring configurations are in two different phases, one liquid the other one gaseous, hence $\Delta E$ is larger compared to chains where $\beta$ is far from the critical point (and both configurations are in the same phase). 
 
-In Fig.\ref{fig:PathPT}, we can appreciate the swaps taking place from the perspective of a fixed Markov chain (defined according to the initial temperature). The parallel tempering algorithm allows the diffusion of each configuration over time from cold to hot conditions and back.
+In Fig. \ref{fig:PathPT}, we can appreciate the swaps taking place from the perspective of a fixed Markov chain (defined according to the initial temperature). The parallel tempering algorithm allows the diffusion of each configuration over time from cold to hot conditions and back.
 
 \begin{figure}
 	\centering
@@ -95,14 +95,12 @@ In Fig.\ref{fig:PathPT}, we can appreciate the swaps taking place from the persp
 \end{figure}
 
 
-
-
 \paragraph{Low temperatures regime}
 Up until now, there was no reason to believe parallel tempering can actually be superior with respect to the usual Metropolis algorithm when it comes to sample from Boltzmann equilibrium distributions. In Fig. \ref{fig:HistogramsParallelTempering}, both procedures (with and without parallel tempering) seem to reproduce the same curves, up to statistical errors. Let's see what happens when the chosen temperatures $\beta_k$ are lower than before:
 $$
 \beta \in \{4,5,6,7,8,9,10,11\}
 $$
-Results concerning energy histograms and trace plots are shown in Fig.\ref{fig:HistogramsLowt}. When $\beta = 4 \> (T = 0.25)$, there still is no sensible difference when using parallel tempering. However, a completely different scenario emerges when $\beta = 8$ or $\beta = 11$ (corresponding to $T = 0.125$, $T = 0.09$). Both simulations seem to have found a stationary state, i.e. a minimum of the free energy, even though the average (potential) energy per particle is definitely not the same. What's the reason behind this strange behavior? Why is the average energy per particle lower when parallel tempering is used?
+Results concerning energy histograms and trace plots are shown in Fig. \ref{fig:HistogramsLowt}. When $\beta = 4 \> (T = 0.25)$, there still is no sensible difference when using parallel tempering. However, a completely different scenario emerges when $\beta = 8$ or $\beta = 11$ (corresponding to $T = 0.125$, $T = 0.09$). Both simulations seem to have found a stationary state, i.e. a minimum of the free energy, even though the average (potential) energy per particle is definitely not the same. What's the reason behind this strange behavior? Why is the average energy per particle lower when parallel tempering is used?
 
 The reason is that, when $T$ is extremely low, a phenomena called \textit{quasi-ergodicity} appears. Imagine a configuration where particles are distributed in two distinct but similar clusters (or droplets). This is not yet the equilibrium configuration, but rather a \textit{metastable state}. To further decrease the energy (which is essential in the low $T$ regime, where the entropic term is negligible), the system should make the two droplets merge (less surface area). For this to happen, particles on the boundary of one cluster should evaporate and then attach to the other droplet. The difference in energy associated to the evaporation of an external particle is about $\Delta E = -4$ (assuming $4$ particles on one side, none on the other). When $\beta = 8$, for example, the associated Metropolis acceptance rate for this move is $\exp(-4 \cdot 8) = \exp(-32) \approx 10^{-14}$. Hence, if the system collapses into one of these multi-cluster metastable states, the usual Metropolis algorithm is unable to nudge away from these configurations. This is precisely what \textit{quasi-ergodicity} is, i.e. the fact that a small portion of the phase space is explored but never abandoned to reach other relevant (and more stable) portions because the intermediate states are very unlikely. 
 
@@ -124,7 +122,7 @@ With parallel tempering, this problem is solved by frequently switching configur
 \end{figure}
 
 \paragraph{A new phase transition}
-Let's plot the average (potential) energy per particle and the specific heat per particle at low temperatures. Results are shown in Fig.\ref{fig:energy_lowT}
+Let's plot the average (potential) energy per particle and the specific heat per particle at low temperatures. Results are shown in Fig.\ref{fig:energy_lowT}.
 \begin{figure}
 	\centering
 	\includegraphics[scale = 0.5]{./FIG/Energy_SpecificHeat_LowT.pdf}

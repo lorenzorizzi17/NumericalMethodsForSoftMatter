@@ -7,7 +7,7 @@ V_{LJ}(r) = 4\epsilon \Bigl(\Bigl(\frac{\sigma}{r}\Bigr)^{12}- \Bigl(\frac{\sigm
 $$
 are both set to $1$. 
 
-In the previous sections, I integrated the equations of motion for the $N$-particles system with the help of LAMMPS and focused on the offline analyses of the relevant macroscopic quantities (kinetic and potential energy, radial distribution functions, \dots). Here, I decided to modify the code written for the MC simulation of Chapter 1 hence implementing myself a modest Velocity-verlet molecular engine. This was done with the prospect of creating a custom thermostat algorithm over which I could exert more control. In fact, a general MD simulation where the EOMs are integrated numerically through a symplectic algorithm will replicate the behavior of a closed system with no external environment acting upon it. Clearly enough, this implies that the correct statistical ensamble to use when describing this system is the microcanonical (or NVE) ensamble, since energy is conserved by Hamilton's theorem.
+In the previous sections, I integrated the equations of motion for the $N$-particles system with the help of LAMMPS and focused on the offline analyses of the relevant macroscopic quantities (kinetic and potential energy, radial distribution functions, \dots). Here, I decided to modify the code written for the Monte Carlo simulation of Chapter 1 hence implementing myself a modest Velocity-verlet molecular engine. This was done with the prospect of creating a custom thermostat algorithm over which I could exert more control. In fact, a general MD simulation where the EOMs are integrated numerically through a symplectic algorithm will replicate the behavior of a closed system with no external environment acting upon it. Clearly enough, this implies that the correct statistical ensamble to use when describing such a system is the microcanonical (or NVE) ensemble, since energy is conserved by Hamilton's theorem.
 
 However, in this part of the report we'd like to simulate a many-particles system where we fix the temperature $T$ rather than the energy $E$, thus switching to a canonical description of the problem (NVT ensamble). To achieve that, we need to dip the system into a thermal bath at fixed temperature $T$ that can freely exchange energy with the particles. There exists two classes of algorithms that can reproduce this desired thermal dynamics:
 \begin{itemize}
@@ -20,7 +20,7 @@ However, in this part of the report we'd like to simulate a many-particles syste
 	\lambda^2 = 1 + \frac{\Delta t}{\tau}\frac{T - T(t)}{T(t)}
 	$$
 	where $T$ is the temperature of the thermal bath (i.e. the target temperature) and $\tau$ is a control parameter that governs the intensity of the thermostat itself: when $\tau = \Delta t$, we will rescale at each time step and the thermostat is strongly coupled to the system. When $\tau >> \Delta t$, the corrections applied to the velocities are negligible and we might not reach the target $T$. Usually, the system takes about $\tau$ time-steps to relax at the desired temperature $T$
-	\item {Canonical thermostats} At variance with the non-canonical ones, canonical thermostats truly represent systems displaying canonical ensemble properties (for example, energy fluctuations distributions). In this report, I've implemented the Andersen thermostat. The fundamental idea behind Andersen thermostat is to couple the system with a thermal bath whose interactions is represented by stochastic collisions with the particles. At each time-step, we randomly select a collection of particles that will experience a collision with the thermal bath: when this happens, their current velocities is completely forgotten\footnote{This is the molecular chaos hypothesis, formulated by Boltzmann long ago. Even though it seemingly defies our deterministic understanding of Newtonian motion, it stands as the backbone of modern statistical mechanics}. The new velocity is sampled from the Maxwell-Boltzmann distribution (which is a Gaussian distribution for the velocity components), enforcing the canonical ensemble. Andersen's thermostat is parametrized by a control parameter $\omega$: at each time-step, the probability that a particle will experience the velocity resetting is $P = \omega \delta T$. Tha larger $\omega$ is, the stronger the thermostat will couple to the system. 
+	\item \textit{Canonical thermostats:} At variance with the non-canonical ones, canonical thermostats truly represent systems displaying canonical ensemble properties (for example, energy fluctuations distributions). In this report, I've implemented the Andersen thermostat. The fundamental idea behind Andersen thermostat is to couple the system with a thermal bath whose interactions is represented by stochastic collisions with the particles. At each time-step, we randomly select a collection of particles that will experience a collision with the thermal bath: when this happens, their current velocities is completely forgotten\footnote{This is the molecular chaos hypothesis, formulated by Boltzmann long ago. Even though it seemingly defies our deterministic understanding of Newtonian motion, it stands as the backbone of modern statistical mechanics}. The new velocity is sampled from the Maxwell-Boltzmann distribution (which is a Gaussian distribution for the velocity components), enforcing the canonical ensemble. Andersen's thermostat is parametrized by a control parameter $\omega$: at each time-step, the probability that a particle will experience the velocity resetting is $P = \omega \delta T$. The larger $\omega$ is, the stronger the thermostat will couple to the system. 
 \end{itemize}
 
 \subsection{Non-canonical vs canonical}
@@ -29,38 +29,38 @@ As a first sanity check, let's see if our handmade implementation of the Velocit
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.5]{../MolecularDynamics/Ex3/fig/energy_conservation.pdf}
-	\caption{\textit{WIP}}
+	\includegraphics[scale = 0.5]{./FIG//energy_conservation.pdf}
+	\caption{\textit{Relative mechanical energy variation for the Velocity-Verlet algorithm implemented (with no thermal bath) versus time. Here, $\Delta t = 0.005$ and $T = 500$.}}
 	\label{fig:ThermoNo}
 \end{figure}
-It's easy to notice a somewhat strange oscillatory trend, the same we observed in Fig.\ref{fig:energyHO}. However, the energy drift with respect to the initial value is on the order of $0.1\%$, a well acceptable value that is also in agreement with LAMMPS simulation (Fig.\ref{fig:energyLJ}).
+It's easy to notice a somewhat strange oscillatory trend, the same we observed in Fig.\ref{fig:energyHO}. However, the energy drift with respect to the initial value is on the order of $0.1\%$, a well acceptable value that is also in agreement with LAMMPS simulation (Fig. \ref{fig:energyLJ} but also Fig. \ref{fig:energyHO}).
 
 Next, we can proceed with implementing both Berendsen and Andersen thermostat. 
 \subsubsection{Berendsen thermostat}
-When using Berendsen thermostat, one can control the intensity of the coupling with the system via the parameter $\tau$ (measured in $\delta t$ units). In Fig.\ref{fig:kinetic_berendsen} we illustrate the temperature $T_K$ histograms varying $\tau$ fixing the target temperature $T = 1$ (in adimensional units). 
+When using Berendsen thermostat, one can control the intensity of the coupling with the system via the parameter $\tau$ (measured in $\delta t$ units). In Fig.\ref{fig:kinetic_berendsen} we illustrate the temperature $T_K$ histograms varying $\tau$ fixing the target temperature $T = 1$ (in adimensional units).\footnote{Clearly enough, the instantaneous temperature can be obtained by measuring the kinetic energy}
 
 When $\tau = 1$, meaning $\tau = \Delta t$, we fallback to a standard velocity-rescaling algorithm. The coupling with the system is extremely aggressive and forces the temperature to be exactly $T = 1$ at each time-step, making the histogram become a Delta dirac distribution around the expected desired value with no fluctuations. When $\tau$ gets larger, the thermal bath interaction gets gentler and temperature is now free to fluctuate around $T = 1$\footnote{We only consider $t > \tau$ to build histograms, since the Berendsen procedure takes time to make the system reach equilibrium. Having $10000$ total timesteps at disposal, it seemed reasonable to stop at $\tau = 2000$. }. However, the coupling becomes so weak that the system takes a large time to thermalize and, when $\tau = 100000$, the resulting histogram is not even centered around $T = 1$, meaning that the system had not yet reached equilibrium. 
 
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.55]{../MolecularDynamics/Ex3/fig/berendsen_kinetic.pdf}
-	\caption{\textit{total of 10000 steps, delta T = 0.005, N = 200}}.
+	\includegraphics[scale = 0.55]{./FIG//berendsen_kinetic.pdf}
+	\caption{\textit{On the left, histogram of sampled temperature $T_K$ for various value of $\tau$ (Berendsen thermostat). On the right, standard deviation of those histograms as a function of $\tau$. The dotted line represent the analytical value of $\sigma_T$ that one would expect in a canonical ensemble and the empirical value extracted from previous chapters in the microcanonical ensemble. The simulation was run with $N = 200, \Delta t = 0.005, T = 500$.}}.
 	\label{fig:kinetic_berendsen}
 \end{figure}
 
-In Fig.\ref{fig:kinetic_berendsen} we've also reported the behavior of the standard deviation $\sigma_T$ as a function of $\tau$. In the canonical ensemble, we'd expect:
+In Fig. \ref{fig:kinetic_berendsen} it is also reported the behavior of the standard deviation $\sigma_T$ as a function of $\tau$. In the canonical ensemble, we'd expect:
 $$
 \sigma_T^2 = T^2 \frac{2}{3N}
 $$
 Instead, what we observe in Fig.\ref{fig:kinetic_berendsen} is a completely different scenario. The standard deviation is not independent of $\tau$ (which has no physical relevance in this problem, being a simple algorithmic parameter) and steadily grows as $\tau$ gets larger until a plateau $\sigma_T \approx 0.04$ is reached, far enough from the expected $\sigma_T^2 = T^2 \frac{2}{3N} \approx 0.06$ when $N = 200$. Interestingly enough, when $\tau$ is large the standard deviation gets closer to the values reported in Tab.\ref{table:table2} for $r_{cut} = 2.5$ and $\rho = 0.4$ that were obtained in the NVE ensemble. This is to be expected: when $\tau$ is exceedingly large, the Berendsen coupling is so weak that no thermalization really occurs. The rescaling effect is so small that particles virtually conserve their velocities and, consequently, their energy, behaving as if they were in a microcanonical ensemble.
 
 \subsubsection{Andersen thermostat}
-Andersen thermostat is not based on a rescaling procedure, but rather on a stochastic modeling of particles collisions with a fixed temperature thermal bath. The process is governed by the parameter $\omega$: larger $\omega$ implies higher collision probability, hence stronger coupling with the system. In Fig.\ref{fig:kinetic_andersen} we show the same plots reported in Fig.\ref{fig:kinetic_berendsen} when using an Anserden thermostat upon varying $\omega$. 
+Andersen thermostat is not based on a rescaling procedure, but rather on a stochastic modeling of particles collisions with a fixed temperature thermal bath. The process is governed by the parameter $\omega$: larger $\omega$ implies higher collision probability, hence stronger coupling with the system. In Fig. \ref{fig:kinetic_andersen} we show the same plots reported in Fig. \ref{fig:kinetic_berendsen} when using an Andersen thermostat upon varying $\omega$. 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.55]{../MolecularDynamics/Ex3/fig/andersen_kinetic.pdf}
-	\caption{\textit{efincw}}
+	\includegraphics[scale = 0.55]{./FIG//andersen_kinetic.pdf}
+	\caption{\textit{On the left, histogram of sampled temperature $T_K$ for various value of $\omega$ (Andersen thermostat). On the right, standard deviation of those histograms as a function of $\omega$. Again, the dotted line represent the analytical value of $\sigma_T$ that one would expect in a canonical ensemble and the empirical value extracted from previous chapters in the microcanonical ensemble. The simulation was run with $N = 200, \Delta t = 0.005, T = 500$.}}
 	\label{fig:kinetic_andersen}
 \end{figure}
 When $\omega$ is small, the coupling is so weak that the simulation is virtually equivalent to a energy-conserving integration, i.e. a microcanonical ensemble (and the standard deviation of the resulting distribution stabilizes around the microcanonical one obtained in Tab.\ref{table:table2}). What do we mean by "small" $\omega$? At each time-step, particles have a probability $P = \omega \Delta t$ of experiencing a collision and having their velocity resampled. Given $N$ particles, the expected number of collisions per unit time is $\mathcal{N} = \omega N \Delta t$. The thermostat start influencing the system when $\mathcal{N} \approx O(1)$, so that:
@@ -69,19 +69,19 @@ $$
 $$
 For the displayed simulations, $N = 200$ and $\Delta t = 0.005$, hence $\omega$ must be approximately $1$ to have a reasonable thermostat (and indeed this is what we observe in Fig.\ref{fig:kinetic_andersen}: when $\omega = 10^{-4}, 10^{-3}, 10^{-2}$ the histograms are not even centered around $T = 1$ and the variance is closer to the one associated to the microcanonical ensemble). When $\omega > 0.1$, the thermostat starts kicking in and allows the system to thermalize at the target temperature $T = 1$. Even more, the $T_K$ distributions seem to be independent enough from $\omega$ and the standard deviation $\sigma_T$ fluctuates around the expected value $\sigma_T^2 = T^2 \frac{2}{3N}$.
 
-Now that we have what seems to be a canonical thermostat, let's see how changing the particles number $N$ affects the width of the temperature histogram. We'll set $T = 2$ and select $\omega$ from the range of acceptable values highlighted in Fig.\ref{fig:kinetic_andersen}. Results are shown in Fig.\ref{fig:andersenN} and display both the histograms (at fixed $\omega = 1$) and a logarithmic-logarithmic plot of $\sigma_T$ versus $N$ when $\omega = 1$ and $\omega = 10$ (averaging over $10$ realizations). The plot is convincing and solid evidence for the scaling relation $\sigma_T^2 = T^2 \frac{2}{3N}$, providing confirmation of the canonical nature of the Andersen thermostat.
+Now that we have what seems to be a canonical thermostat, let's see how changing the particles number $N$ affects the width of the temperature histogram. We'll set $T = 2$ and select $\omega$ from the range of acceptable values highlighted in Fig. \ref{fig:kinetic_andersen}. Results are shown in Fig. \ref{fig:andersenN} and display both the histograms (at fixed $\omega = 1$) and a logarithmic-logarithmic plot of $\sigma_T$ versus $N$ when $\omega = 1$ and $\omega = 10$ (averaging over $10$ realizations). The plot is convincing and solid evidence for the scaling relation $\sigma_T^2 = T^2 \frac{2}{3N}$, providing confirmation of the canonical nature of the Andersen thermostat.
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.55]{../MolecularDynamics/Ex3/fig/andersen_size.pdf}
-	\caption{\textit{ded}}
+	\includegraphics[scale = 0.55]{./FIG//andersen_size.pdf}
+	\caption{\textit{On the left, histogram of sampled temperature $T_K$ for various value of $N$ number of particles (Berendsen thermostat, coupling $\omega = 1$.). On the right, standard deviation of those histograms as a function of $N$ using two distinct values of $\omega$. The scaling behavior $\sigma_T \sim O(T^{-2})$ is shown with a dotted line. Both simulations were run with $N = 200, \Delta t = 0.005, T = 500$.}}
 	\label{fig:andersenN}
 \end{figure}
-The same plot concerning Berendsen algorithm is reproduced in Fig.\ref{fig:berendsenN} when $\tau = 10$ or $\tau = 100$. The situation here is quite different and the scaling behavior for $\sigma_T$ is definitely not obeyed by Berendsen thermostat, providing hint of its non-canonical properties.
+The same plot concerning Berendsen algorithm is reproduced in Fig. \ref{fig:berendsenN} when $\tau = 10$ or $\tau = 100$. The situation here is quite different and the desired  scaling behavior for $\sigma_T$ is definitely not obeyed by Berendsen thermostat, providing hint of its non-canonical properties.
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.55]{../MolecularDynamics/Ex3/fig/berendsen_size.pdf}
-	\caption{\textit{ded}}
+	\includegraphics[scale = 0.55]{./FIG//berendsen_size.pdf}
+	\caption{\textit{On the left, histogram of sampled temperature $T_K$ for various value of $N$ number of particles (Andersen thermostat, coupling $\tau = 10$.). On the right, standard deviation of those histograms as a function of $N$ using two distinct values of $\tau$. The scaling behavior $\sigma_T \sim O(T^{-2})$ is shown with a dotted line. Both simulations were run with $N = 200, \Delta t = 0.005, T = 500$.}}
 	\label{fig:berendsenN}
 \end{figure}
 
@@ -95,15 +95,15 @@ In this section, we will consider a FCC crystal (as provided in the Moodle). Ato
 
 \begin{figure}
 	\centering
-	\includegraphics[scale =0.66]{../MolecularDynamics/Ex3/fig/RDF_plot_crystalline.pdf}
-	\caption{\textit{ecwd}}
+	\includegraphics[scale =0.66]{./FIG//RDF_plot_crystalline.pdf}
+	\caption{\textit{Radial distribution function for the initial configuration (FCC32 and FCC108) provided in the Moodle}}
 	\label{fig:rdf}
 \end{figure}
 
 The two functions refer to the same FCC structure at the same numerical density with different particles number ($N = 108, N = 32$). The curves are pretty much perfectly aligned and they both display the standard peaks and valleys typical in a crystalline structure, in particular a FCC lattice. The sudden peak when $N = 32, r \approx 3.1$ is just an artifact and is due to the fact that the simulation was run in a box of size $L \approx 3.1$. It makes no sense to consider a $g(r)$ when $r > L$, the simulation length (and the peak at $r = L$ is due to the fact that the particle has found itself).
 
 \paragraph{Equipartition theorem}
-The equipartition theorem states that, at thermal equilibrium, each quadratic degrees of freedom appearing in the Hamiltonian of the system has an average energy associated of $\frac{1}{2}k_b T = \frac{1}{2}$. 
+The equipartition theorem states that, at thermal equilibrium, each quadratic degrees of freedom appearing in the Hamiltonian of the system has an average energy associated of $\frac{1}{2}k_B T = \frac{1}{2}$ (with $T=1$). 
 
 For example, only considering the kinetic energy $K$:
 $$
@@ -132,7 +132,7 @@ It's quite easy to see that Andersen's thermostat closely reproduces the expecte
 
 \begin{figure}
 	\centering
-	\includegraphics[scale =0.5]{../MolecularDynamics/Ex3/fig/equipartition.pdf}
-	\caption{\textit{ecwd}}
+	\includegraphics[scale =0.5]{./FIG//equipartition.pdf}
+	\caption{\textit{Ratio between kinetic energy of the center of mass and total kinetic energy when using Berendsen thermostat (below) or Andersen thermostat (above)}}
 	\label{fig:equipartition}
 \end{figure}

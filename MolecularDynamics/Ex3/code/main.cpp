@@ -42,5 +42,5 @@ int main(){
     NDMolDyn<3> sim("../fcc108.xyz", L, r_cut, skin, M, initialTemperature);
     sim.attachAndersenThermostat(initialTemperature, 100);
 
-    sim.MDRun(num_steps, 0.005, 10, "dump.txt"); // Devo rifare andersen omega = 100, ricorda
+    sim.MDRun(num_steps, 0.005, 10, "dump.txt");
 }
