@@ -1,15 +1,14 @@
-\chapter*{Exercise 1: Lecture 7: Off-lattice Monte Carlo simulations}
+\chapter{Off-lattice Monte Carlo simulations}
 
 
 \section{The Hard Sphere model}
 
-The Hard Sphere model is a paradigmatic model in Soft Matter (despite the nam-
-ing would not suggest so). The interaction energy between two hard spheres is zero if the separation distance is larger than the diameter of the particle $\sigma$ and infinite otherwise. Set $\sigma=1$ as the unit of length. Using the Hard Sphere model, one can simplify the Metropolis acceptance rule as follows:
+The \textit{Hard Sphere model} is a paradigmatic model in Soft Matter (despite the naming would not suggest so). The interaction energy between two hard spheres is zero if the separation distance is larger than the diameter of the particle $\sigma$ and infinite otherwise. Set $\sigma=1$ as the unit of length. Using the Hard Sphere model, one can simplify the Metropolis acceptance rule as follows:
 \begin{itemize}
-	\item reject every displacement that brings any two particles closer than $\sigma$ call it an overlap. You can assign a very large energy to the configuration if an overlap is present, thus overlap can be spotted more easily.
+	\item reject every displacement that brings any two particles closer than $\sigma$; call it an overlap. You can assign a very large energy to the configuration if an overlap is present, thus overlap can be spotted more easily.
 	\item accept every displacement that keeps every pair of particles at a distance larger than $\sigma$ or that removes an overlap.
 \end{itemize}
-An acceptable state for a Hard Sphere system has zero energy and is homogeneously distributed in the simulation box. Consider a system of $N = 200$ Hard Spheres in three dimensions. Starting from random conformations, simulate the system at different number density $\rho = \frac{N}{V}: (i) \rho = 0.05\sigma^{-3} (ii) \rho = 0.4\sigma^{-3}$ and $(iii) \rho = 0.62\sigma^{-3}$. Use a simple cubic box and pay attention to set a suitable maximum displacement. Check that
+An acceptable state for a Hard Sphere system has zero energy and is homogeneously distributed in the simulation box. Consider a system of $N = 200$ Hard Spheres in three dimensions. Starting from random conformations, simulate the system at different number density $\rho = \frac{N}{V}: (i)\> \rho = 0.05\sigma^{-3} (ii)\> \rho = 0.4\sigma^{-3}$ and $(iii)\> \rho = 0.62\sigma^{-3}$. Use a simple cubic box and pay attention to set a suitable maximum displacement. Check that
 the energy reaches zero (equilibration) before collecting data. Compute the radial distribution function
 $g_2(r)$, discussed in class and describe what changes between the three different states.
 \textbf{\\ Resolution \\}
@@ -25,7 +24,7 @@ where $T$ represents the standard kinetic energy and $U$ is the total potential 
 		0 \>\> \text{        if       } \>\>|\vec r_i - \vec r_j | > 1 
 	\end{cases}
 \end{equation}
-Thus, the molecules interact only to avoid spatial overlaps but are otherwise free to move without experiencing any forces. In the NVT ensemble, the probability distribution function in phase space $(\vec r_i, \vec p_i)$ is given by the Boltzmann formula:
+Thus, the molecules interact only to avoid spatial overlaps but are otherwise free to move without experiencing any force. In the NVT ensemble (the one sampled with Metropolis), the probability distribution function in phase space $(\vec r_i, \vec p_i)$ is given by the Boltzmann formula:
 $$
 p(\{\vec{r},\vec{p}\}) = \frac{1}{Z}\exp(-\beta \mathcal{H}(\{\vec r, \vec p\}))
 $$ 
@@ -116,6 +115,8 @@ void NDMolDyn<Dim>::singleMCStep(){
 \end{lstlisting}
 
 The simulation can be run in an arbitrary number of dimension, but we'll use $d = 2$ or $d=3$ for the sake of simplicity. The parameters that we can modify can be summarized:
+
+
 \begin{table}[h]
 	\centering
 	\begin{tabular}{ll}
@@ -127,16 +128,13 @@ The simulation can be run in an arbitrary number of dimension, but we'll use $d 
 		$MCSteps$ & Number of MC steps to perform (1 MCStep = $N$ proposals)      
 	\end{tabular}
 \end{table}
+
+
 When the function \texttt{buildVerletLists()} is called, the program will start filling the object \texttt{std::vector<std::vector<int>> verletLists}. In particular, the list \texttt{verletLists[i]} will consist of all particles whose position $r_j$ is such that:
 $$
 |\vec r_j - \vec r_i| < r_{cut} + r_{skin}
 $$
-The parameter $r_{cut}$ should be chosen as to represent a characteristic length over which the interaction dies out. In this specific case, since the pair-wise hard-sphere interaction is non zero only when $|\delta r| < 1$ (diameter of the molecules), we can safely set $r_{cut}=1$. The skin parameter is a performance parameter, meaning that it sets how frequently one has to update the Verlet lists (the less, the better). In this code, I've used to rule according to which when the total displacement of a molecules (with respect to the position occupied the last time \texttt{buildVerletList()} was called) is larger than half of the skin parameter, then the Verlet lists must be rebuilt from scratch. A good choice for $r_{skin} = 0.5$ (but this depends on the specific run). In order for the algorithm to work, a few sanity check are in order:
-When the function \texttt{buildVerletLists()} is called, the program will start populating the structure \texttt{std::vector<std::vector<int>> verletLists}. In particular, the list \texttt{verletLists[i]} will consist of all particles whose position $\vec r_j$ is such that:
-$$
-|\vec r_j - \vec r_i| < r_{cut} + r_{skin}
-$$
-The parameter $r_{cut}$ should be chosen to represent a characteristic length over which the interaction is non-negligible. In this specific case, since the pair-wise hard-sphere interaction is non-zero only when $|\delta r| < 1$ (the molecular diameter), we can safely set $r_{cut}=1$. The skin parameter is a performance optimization, meaning that it sets how frequently one has to update the Verlet lists (the less frequent, the better). In this code, the following rule is applied: when the total displacement of a molecule (with respect to the position occupied the last time \texttt{buildVerletList()} was called) is larger than half of the skin parameter, then the Verlet lists must be rebuilt from scratch. A good choice for $r_{skin} = 0.5$ (but this depends on the specific run). In order for the algorithm to work, a few sanity checks are in order:
+The parameter $r_{cut}$ should be chosen as to represent a characteristic length over which the interaction dies out. In this specific case, since the pair-wise hard-sphere interaction is non zero only when $|\delta r| < 1$ (diameter of the molecules), we can safely set $r_{cut}=1$. The skin parameter is a performance parameter, meaning that it sets how frequently one has to update the Verlet lists (the less, the better). In this code, I've used to rule according to which when the total displacement of a molecules (with respect to the position occupied the last time \texttt{buildVerletList()} was called) is larger than half of the skin parameter, then the Verlet lists must be rebuilt from scratch. A good choice is $r_{skin} = 0.5$ (but this depends on the specific run). In order for the algorithm to work, a few sanity check are in order:
 \begin{itemize}
 	\item The Verlet lists are built upon the cell lists, meaning that the neighbours of a particle are selected by only checking adjacent cells. If the linear size of the cells is too small, then we might be losing essential interactions. Specifically, we require:
 	\begin{equation}
@@ -150,7 +148,7 @@ The parameter $r_{cut}$ should be chosen to represent a characteristic length ov
 The program will automatically perform those sanity check at the beginning of the simulation and signal to the user whether a violation has been detected. 
 
 \subsection{Qualitative analyis}
-We set $N = 200$ particles and investigate the behavior of the system in $3D$ across three different number densities: $\rho = 0.62, \rho = 0.4$, and $\rho = 0.05$. The simulation executes the MCMC algorithm and records the coordinates of all particles at specified intervals, dumping them into a \texttt{traj.xyz} file. This output is particularly useful when analyzed with \texttt{OVITO}, a free software package capable of reading \texttt{.xyz} trajectory files and rendering the simulation in $3D$.\footnote{The native $2D$ rendering option was implemented using the SFML library; however, due to the complexity of real-time $3D$ rendering, we relied on an external third-party software.} The resulting configurations for the three defined densities are visualized in Fig.\ref{fig:OVITO}: the results qualitatively confirm that higher concentration leads to denser molecular packing. Table.\ref{table:table1} presents the parameters defining the MC chain along with key diagnostic quantities. These diagnostics include the acceptance rate and the rebuild probability (which quantifies the frequency of the computationally expensive Verlet list updates).
+We set $N = 200$ particles and investigate the behavior of the system in $3D$ across three different number densities: $\rho = 0.62, \rho = 0.4$, and $\rho = 0.05$. The simulation executes the MCMC algorithm and records the coordinates of all particles at specified intervals, dumping them into a \texttt{traj.xyz} file. This output is particularly useful when analyzed with \texttt{OVITO}, a free software package capable of reading \texttt{.xyz} trajectory files and rendering the simulation in $3D$.\footnote{The native $2D$ rendering option was implemented using the SFML library. Instead, due to the complexity of real-time $3D$ rendering, I relied on an external third-party software.} The resulting configurations for the three defined densities are visualized in Fig.\ref{fig:OVITO}: the results qualitatively confirm that higher concentration leads to denser molecular packing. Table.\ref{table:table1} presents the parameters defining the MC chain along with key diagnostic quantities. These diagnostics include the acceptance rate and the rebuild probability (which quantifies the frequency of the computationally expensive Verlet list updates).
 \begin{table}
 	\centering
 	\begin{tabular}{|c|c|c|c|c|c|}
@@ -164,14 +162,14 @@ We set $N = 200$ particles and investigate the behavior of the system in $3D$ ac
 		$0.62$  &  0.2 & 0.5 & 4&4\%&$0.38 \pm 0.06$ \\ 
 		\hline
 	\end{tabular}
-	\caption{\textit{A list of the parameters governing the Verlet and cell list techniques that were implemented to enhance code performance ($\texttt{max\_displacement, skin, M}$). The total number of MC steps and $r_{cut}$ were held constant at $10,000$ and $1$, respectively. In addition, two diagnostic parameters were monitored to ensure the Markov chain explored the space correctly and that the acceleration technique was effective: the acceptance rate and the rebuilding factor. The acceptance rates for the higher densities ($\rho = 0.4$ and $\rho = 0.62$) can be considered satisfactory, whereas the rate observed for $\rho = 0.05$ is rather high. While in ordinary MC simulations this might suggest the algorithm is exploring the space too slowly, this is not the case here: the low number density results in extremely rare interactions.}}
+	\caption{\textit{A list of the parameters governing the Verlet and cell list techniques that were implemented to enhance code performance ($\texttt{max\_displacement, skin, M}$). The total number of MC steps and $r_{cut}$ were held constant at $10^5$ and $1$, respectively. In addition, two diagnostic parameters were monitored to ensure the Markov chain explored the space correctly and that the acceleration technique was effective: the acceptance rate and the rebuilding factor. The acceptance rates for the higher densities ($\rho = 0.4$ and $\rho = 0.62$) can be considered satisfactory, whereas the rate observed for $\rho = 0.05$ is rather high. While in ordinary MC simulations this might suggest the algorithm is exploring the space too slowly, this is not the case here: the low number density implies extremely rare interactions, hence a higher acceptance rate.}}
 	\label{table:table1}
 \end{table}
 \begin{figure}
 	\centering
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/gas.png}
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/liquid.png}
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/solid.png}
+	\includegraphics[scale=0.33]{./FIG/gas.png}
+	\includegraphics[scale=0.33]{./FIG/liquid.png}
+	\includegraphics[scale=0.33]{./FIG/solid.png}
 	\caption{\textit{3D rendering (under periodic boundary condition) performed by OVITO starting from three MC chains. From the left to the right, $\rho = 0.05, \rho = 0.4, \rho = 0.62$ and $N$ is kept constant at $N=200$. The spatial lengths are all rescaled in such a way that $\sigma=1$, where $\sigma$ is the molecules diameter.}}
 	\label{fig:OVITO}
 \end{figure} 
@@ -179,14 +177,14 @@ With the obtained MC chains for the spatial configurations, we can analyze the s
 
 The behaviour for $r > 1$ suggests the formation of at least two phases (a gaseous phase and a condensed one). When $\rho = 0.05$, $g(r)$ remains close to the asymptotic line $g(r)=1$, which is characteristic of an ideal gas. In other words, at sufficiently low densities, the local density is relatively homogeneous and comparable to the global density $\rho = N/V$. A slight enhancement is observed at $r \approx 1$, which decays back to $1$ as $r\to \infty$; this indicates that the local density in the immediate vicinity of a molecule is slightly higher than the typical (uncorrelated) density of an ideal gas. This effect is a direct consequence of the excluded volume interaction. Consider a particle fixed at $r=0$: in an ideal gas system, a second particle can arbitrarily occupy any point $\vec r$ in space independent of the existence of the first particle at $\vec r = 0$. Consequently, there would be a finite probability $p(V_\sigma)$ of finding the second particle within the region $V_\sigma$, defined as a sphere of radius $\sigma$ centered at the origin. Getting back to a system with excluded volume interactions, this probability $p(V_\sigma)$ must necessarily be zero, since the potential energy of an overlapping configuration is infinite. Consequently, this probability mass $p(V_\sigma)$ is effectively ''redistributed'' into the accessible region of space immediately surrounding the sphere $V_\sigma$.
 
-When $\rho = 0.4$ or $\rho = 0.62$, the radial distribution curves exhibit more complex features. The peak around $r=1$ becomes significantly more pronounced, increasing in height as $\rho$ increases. Furthermore, the curve displays the characteristic behavior of oscillations exponentially damped that asymptotically decay to the value $1$ as $r \to \infty$. This pattern provides us with crucial information regarding the geometric structure of the system. The alternating peaks and valleys correspond to successive \textit{coordination shells}. The first peak represents the nearest neighbors forming a "cage" around the reference particle, while the subsequent peaks represent layers of secondary neighbors. The first valley implies a region of particle depletion: this is expected, as the presence of a tightly packed first shell prohibits other particles from occupying the same volume due to steric exclusion. The damping of these oscillations indicates that the positional correlation is eventually lost at long distances.
+When $\rho = 0.4$ or $\rho = 0.62$, the radial distribution curves exhibit more complex features. The peak around $r=1$ becomes significantly more pronounced, increasing in height as $\rho$ increases. Furthermore, the curve displays the characteristic behavior of oscillations exponentially damped that asymptotically decay to the value $1$ as $r \to \infty$. This pattern provides us with crucial information regarding the geometric structure of the system. The alternating peaks and valleys correspond to successive \textit{coordination shells}. The first peak represents the nearest neighbors forming a "cage" around the reference particle, while the subsequent peaks represent layers of secondary neighbors. The first valley implies a region of particle depletion: this is expected, as the presence of a tightly packed first shell prohibits other particles from occupying the same volume due to local exclusion. The damping of these oscillations indicates that the positional correlation is eventually lost at long distances.
 
 Clearly enough, the larger the density $\rho$, the more pronounced those oscillations are (since the geometric packing become more and more regular).
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.49\linewidth]{../MolecularDynamics/Ex1/fig/RDF_plot.pdf}
-	\includegraphics[width=0.49\linewidth]{../MolecularDynamics/Ex1/fig/RDF_plot_well.pdf}
+	\includegraphics[width=0.49\linewidth]{./FIG/RDF_plot.pdf}
+	\includegraphics[width=0.49\linewidth]{./FIG/RDF_plot_well.pdf}
 	\caption{\textit{(Left panel) Radial distribution function for the hard-sphere model as a function of (rescaled) distance $r$ at different values of $\rho$ (but $N = 200$). In all cases, $g(r)=0$ when $r < 1$, thanks to the excluded volume, and the correlation dies out when $r$ gets larger  (Right panel) Radial distribution function for the Van der Waals model (isotropic patchy hard sphere where $\theta_{max} = \frac{\pi}{2}$). Now a clear correlation appears for all three densities in the region $ 1 < r < 1.2$.}}
 	\label{fig:g(r)}
 \end{figure}
@@ -212,7 +210,7 @@ double NDMolDyn<3>::getEnergy(vecd particle_pos, Patch particle_patch, int parti
 }
 \end{lstlisting}
 \subsection{Extreme cases}
-Before considering a reasonable set of values for $\theta_{max}$, let's explore the extreme cases, where $\theta_{max} = 0$ and $\theta_{max} = \frac{\pi}{2}$. In the first case, the molecules needs to be completely and perfectly aligned to interact; this is impossible ('cause of the machine error), so when $\theta_{max} = 0$ we fallback to the previous case where no interactions (apart from the repulsive volume) occurs. However, when $\theta_{max} = \frac{\pi}{2}$ then particles will always interact as long as their distance is smaller than $1+\delta = 1+0.2$ (but larger than 1). This is the case where no patchy-like interactions occur and only a potential well around the molecules is considered (a Van der Walls gas!)
+Before considering a reasonable set of values for $\theta_{max}$, let's explore the extreme cases, where $\theta_{max} = 0$ and $\theta_{max} = \frac{\pi}{2}$. In the first case, the molecules needs to be completely and perfectly aligned to interact; this is impossible (because of machine precision), so when $\theta_{max} = 0$ we fallback to the previous case where no interactions (apart from the repulsive volume) occurs. However, when $\theta_{max} = \frac{\pi}{2}$ then particles will always interact as long as their distance is smaller than $1+\delta = 1+0.2$ (but larger than 1). This is the case where no patchy-like interactions occur and only a spherically symmetric potential well around the molecules is considered (a sort of Van der Walls gas!)
 
 We fix $\theta_{max} = \frac{\pi}{2}$ and evaluate the radial distribution function at $k_B T = 0.8$ for three different densities\footnote{Energy is rendered dimensionless by normalizing to the potential well depth, that is by setting $\epsilon_{SW} = -1$.}. The results are presented in the right panel of Fig.\ref{fig:g(r)}. Once again, for $r < 1$, the radial distribution vanishes due to the excluded volume interaction. However, particles are now subject to a short-range attractive potential well (energy gain of $-1$) which favors configurations where particles are directly surrounded by other particles. Indeed, Fig.\ref{fig:g(r)} confirms the presence of a region $1 < r < 1.2$ where the local density significantly exceeds the bulk density, suggesting the formation of small molecular clusters. Beyond the interaction range ($r > 1.2$), we recover the typical oscillatory behavior for high densities or the flat asymptotic profile for low densities. 
 
@@ -220,28 +218,28 @@ In Fig.\ref{fig:OVITOisotropic}, we present three simulation snapshots rendered 
 
 One might argue that the formation of these structures is merely coincidental, potentially occurring even in the absence of a potential well (these apparent bonds could simply result from random spatial fluctuations where particles momentarily approach each other at a distance smaller than $1.2$)\footnote{Bonds in the case where no potential well exists doesn't make much sense, since they do not contribute to the energy of the system. The point I'm trying to prove here is that, when the potential is switched on, the fact that a certain amount of molecules tend to cluster together in small structure cannot be simply explained by pure luck, i.e. particles that eventually come closer.}. To verify that the emergence of these structures is effectively driven by the short-range interaction, we quantify the number of bonds in both cases (i.e., $\epsilon = 0$ and $\epsilon = -1$), defining a bond between two particles whenever their mutual distance is less than $1.2$.
 
-I've run a simulation with $10k$ MC steps under those conditions and we averaged the number of bonds $b$ for the last $1000$ steps. When $\epsilon = 0$, we measure $b = 16 \pm 4$, whereas when $\epsilon = -1$ we obtain $b = 52 \pm 5$. This is enough evidence to prove that the short range potential is responsible for the formation of those very small structures (only a few particles wide).
+I've run a simulation with $10k$ MC steps under those conditions and averaged the number of bonds $b$ for the last $1000$ steps. When $\epsilon = 0$, we measure $b = 16 \pm 4$, whereas when $\epsilon = -1$ we obtain $b = 52 \pm 5$. This is enough evidence to prove that the short range potential is responsible for the formation of those very small structures (only a few particles wide).
 
 \begin{figure}
 	\centering
 	\hspace{-0.5cm}
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/gas_well1.png}
+	\includegraphics[scale=0.33]{./FIG/gas_well1.png}
 	\hspace{0.1cm}
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/liquid_well1.png}
+	\includegraphics[scale=0.33]{./FIG/liquid_well1.png}
 	\hspace{0.1cm}
-	\includegraphics[scale=0.33]{../MolecularDynamics/Ex1/fig/solid_well1.png}
+	\includegraphics[scale=0.33]{./FIG/solid_well1.png}
 	\hspace{-0.5cm}
 	\caption{\textit{3D rendering (under periodic boundary condition) performed by OVITO starting from three MC chains (isotropic potential well + excluded volume). From the left to the right, $\rho = 0.05, \rho = 0.4, \rho = 0.62$ and $N$ is kept constant at $N=200$. The blue bonds connect pair of molecule whose distance is less than $1.2$ (thus interacting particles).}}
 	\label{fig:OVITOisotropic}
 \end{figure} 
 
 \paragraph{Energy and condensation}
-An alternative approach to investigating bond formation involves the analysis of the system's potential energy. Indeed, a direct relationship exists such that $U = Nb$, where $b$ denotes the number of bonds. The evolution of the potential energy as a function of MC steps is illustrated in Fig.\ref{fig:3traceplots}, alongside a histogram of the same observable at a temperature of $k_B T = 0.8$. As expected, the MCMC algorithm begins sampling configurations from the correct equilibrium distribution only after a transient period, which depends on the chosen initial state. Following this initial \textbf{burn-in} phase, the trace plots clearly demonstrate that the Monte Carlo chains have converged to the limiting distribution and are sampling effectively. The distribution of the samples is approximately Gaussian, a result consistent with standard expectations in statistical mechanics that serves as a validity check. To obtain a Monte Carlo estimate of the thermal average $\langle U \rangle$, we discard the initial samples (burn-in) and compute the mean over the remaining trajectory. Next, we can compute the average energy $\langle U \rangle$ for different values of $\rho$ and $T$ (Fig.\ref{fig:transphase}). 
+An alternative approach to investigating bonds formation involves the analysis of the system's potential energy. Indeed, a direct relationship exists such that $U = -Nb$, where $b$ denotes the number of bonds. The evolution of the potential energy as a function of MC steps is illustrated in Fig.\ref{fig:3traceplots}, alongside a histogram of the same observable at a temperature of $k_B T = 0.8$. As expected, the MCMC algorithm begins sampling configurations from the correct equilibrium distribution only after a transient period, which depends on the chosen initial state. Following this initial \textbf{burn-in} phase, the trace plots clearly demonstrate that the Monte Carlo chains have converged to the limiting distribution and are sampling effectively. The distribution of the samples is approximately Gaussian, a result consistent with standard expectations in statistical mechanics that serves as a validity check. To obtain a Monte Carlo estimate of the thermal average $\langle U \rangle$, we discard the initial samples (burn-in) and compute the mean over the remaining trajectory. Next, we can compute the average energy $\langle U \rangle$ for different values of $\rho$ and $T$ (Fig.\ref{fig:transphase}). 
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = .8]{../MolecularDynamics/Ex1/fig/Energy_analysis_well.pdf}
-	\caption{\textit{Trace plots (on the left) and relative histograms (on the right) for three MC chains sampling from the isotropic potential well system at fixed temperature $k_B T = 0.8$ for three different values of density $\rho$. Number of particles $N = 200$ and $10000$ MC steps. Both the trace plots and the histograms display the usual behaviour expected from a Markov chain-based algorithm (an initial transient + a thermalized phase).}}
+	\includegraphics[scale = .8]{./FIG/Energy_analysis_well.pdf}
+	\caption{\textit{Trace plots (on the left) and relative histograms (on the right) for three MC chains sampling from the isotropic potential well system ($\cos(\theta_{max}) = \pi /2$) at fixed temperature $k_B T = 0.8$ for three different values of density $\rho$. Number of particles $N = 200$ and $10000$ MC steps. Both the trace plots and the histograms display the usual behaviour expected from a Markov chain-based algorithm (an initial transient + a thermalized phase).}}
 	\label{fig:3traceplots}
 \end{figure}
 
@@ -249,13 +247,13 @@ At sufficiently high temperatures (specifically, where ``high'' means much large
 $$
 U_{free} = \lim_{T\to\infty} U_{well}(T) = 0
 $$
-However, when the density grows, the asymptotic energy $U_{free}$ becomes increasingly negative. This is simply due to the fact that, when the system is high-density, there will be a moderate probability that a pair of particles gets closer than $1.2$, thus creating a bond and adding a quanta $\epsilon=-1$ to the energetic budget. However, this does not imply that particles are actively driven together by the short-range attraction, as the energetic influence of this potential is essentially negligible when the temperature is sufficiently high. Instead, the observed asymptotic energy reflects the fact that particles are forced into close proximity purely by geometric packing constraints (excluded volume), rather than being directed by attractive forces. The difference between $U_{free} = \lim_{T\to\infty}U_{well}(T)$ and $U_{well}(T)$ is precisely the reason why the count of bonds is different for the two systems ($\epsilon=0$ and $\epsilon=-1$).
+However, when the density grows, the asymptotic energy $U_{free}$ becomes increasingly negative. This is simply due to the fact that, when the system is high-density, there will be a moderate probability that a pair of particles gets closer than $1.2$, thus creating a bond and adding a quanta $\epsilon=-1$ to the energetic budget. However, this does not imply that particles are actively driven together by the short-range attraction, as the energetic influence of this potential is essentially negligible when the temperature is sufficiently high. Instead, the observed asymptotic energy reflects the fact that particles are forced into close proximity purely by geometric packing constraints (excluded volume), rather than being directed by attractive forces.
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.48\linewidth]{../MolecularDynamics/Ex1/fig/average_energy_vs_well_depth.pdf}
-	\includegraphics[width=0.48\linewidth]{../MolecularDynamics/Ex1/fig/heat_capacity_vs_well_depth.pdf}
-	\caption{\textit{On the left, curves representing the average potential energy $\langle U \rangle$ as a function of the temperature for various densities. Below a critical value $T_c$, it's thermodynamically more favorable for the system to condense and create dense pockets of particles (droplets) which minimizes the energy. This will, of course, decrease the entropy as well. But for low temperature, it's the energetic term that really contributes to the free energy. On the right, heat capacity plot (obtained by dividing the discrete $\Delta E$ by the interval $\Delta T$). For all densities, it seems like there is a peak around a critical value $T_c$, a behavior reminiscent of phase transition}}
+	\includegraphics[width=0.48\linewidth]{./FIG/average_energy_vs_well_depth.pdf}
+	\includegraphics[width=0.48\linewidth]{./FIG/heat_capacity_vs_well_depth.pdf}
+	\caption{\textit{On the left, curves representing the average potential energy $\langle U \rangle$ as a function of the temperature for various densities. Below a critical value $T_c$, it's thermodynamically more favorable for the system to condense and create dense pockets of particles (droplets) which minimizes the energy. This will, of course, decrease the entropy as well. But for low temperature, it's the energetic term that really contributes to the free energy. On the right, heat capacity plot (obtained by dividing the discrete $\Delta E$ by the interval $\Delta T$). For all densities, it seems like there is a peak around a critical value $T_c(\rho)$, a behavior reminiscent of phase transition}}
 	\label{fig:transphase}
 \end{figure}
 
@@ -263,27 +261,27 @@ An interesting behavior can be observed for low temperatures: once $T$ reaches a
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.5]{../MolecularDynamics/Ex1/fig/cold_gas.png}
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex1/fig/RDF_plot_well_gas_condensed.pdf}
+	\includegraphics[scale = 0.5]{./FIG/cold_gas.png}
+	\includegraphics[scale = 0.4]{./FIG/RDF_plot_well_gas_condensed.pdf}
 	\caption{\textit{On the right, a snapshot from OVITO rendering for a potential-well system when $\rho = 0.05$ and $k_B T = 0.2$. What was before a gas of molecules randomly interacting becomes now a system where particles condense and create highly dense clusters with a large amount of internal bonds (thus decreasing the energy). On the left, the radial distribution function for the same configuration}}
 	\label{fig:condensed}
 \end{figure}
 
 
 \subsection{Anisotropic patchy hard spheres}
-Let us now consider a case where $\theta_{max} < \frac{\pi}{2}$. When setting $\rho = 0.02$ and $k_B T = 0.8$, the system does not display any meaningful behavior (other than the entropy-rich gaseous phase). Conversely, we expect that by decreasing the solid angle where the interaction potential is active, the probability of two particles successfully interacting is significantly reduced compared to the isotropic case ($\theta_{max} = \frac{\pi}{2}$). This reduction in effective attraction is analogous to lowering the critical freezing temperature of the system. Indeed, Fig.\ref{fig:thetamax} confirms this intuition: for $\theta_{max} = 60^\circ$ or $20 ^\circ$, a temperature of $k_B T = 0.8$ is too hot to observe any condensation phenomena.
+Let us now consider a case where $\theta_{max} < \frac{\pi}{2}$ (anisotropy). When setting $\rho = 0.05$ and $k_B T = 0.8$, the system does not display any interesting behavior (other than the entropy-rich gaseous phase). Conversely, we expect that by decreasing the solid angle where the interaction potential is active, the probability of two particles successfully interacting is significantly reduced compared to the isotropic case ($\theta_{max} = \frac{\pi}{2}$). This reduction in effective attraction is analogous to lowering the critical freezing temperature of the system. Indeed, Fig.\ref{fig:thetamax} confirms this intuition: for $\theta_{max} = 60^\circ$ or $20 ^\circ$, a temperature of $k_B T = 0.8$ is too hot to observe any condensation phenomena.
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.48\linewidth]{../MolecularDynamics/Ex1/fig/average_energy_vs_temp_cosThetamax.pdf}
-	\includegraphics[width = 0.48\linewidth]{../MolecularDynamics/Ex1/fig/average_energy_vs_temp_cosThetamax_zoom.pdf}
+	\includegraphics[width = 0.48\linewidth]{./FIG/average_energy_vs_temp_cosThetamax.pdf}
+	\includegraphics[width = 0.48\linewidth]{./FIG/average_energy_vs_temp_cosThetamax_zoom.pdf}
 	\caption{\textit{(Left) Average potential energy vs temperature at fixed density $\rho = 0.05$ for the patchy hard sphere model for different values of $\theta_{max}$. When $\theta_{max} = 90^\circ$, then we essentially fallback to the isotropic case discussed in the previous paragraph. As $\theta_{max}$ approaches $0$, the system effectively behaves as if no potential well exists and the energy curve flattens out to $0$. The freezing point (critical $T_c$) becomes closer and closer to $0$ as $\theta_{max}$ approaches $0$. (Right) Focus on the region of very low temperature }}
 	\label{fig:thetamax}
 \end{figure}
 Hence, let us simulate a system where $\rho = 0.05$, $k_B T = 0.01$, $\theta_{max} = \frac{\pi}{3}$ or $\theta_{max} = 0.35$ (for $100$k MC steps). Snapshots from OVITO rendering are plotted in Fig.\ref{fig:ovitopatch}
 \begin{figure}
 	\centering
-	\includegraphics[width = 0.48\linewidth]{../MolecularDynamics/Ex1/fig/linear_broad.png}
-	\includegraphics[width = 0.48\linewidth]{../MolecularDynamics/Ex1/fig/linear_narrow.png}
+	\includegraphics[width = 0.48\linewidth]{./FIG/linear_broad.png}
+	\includegraphics[width = 0.48\linewidth]{./FIG/linear_narrow.png}
 	
 	\caption{\textit{Snapshots from the 3D OVITO render. Parameters of the patchy hard-spheres model: $\rho = 0.05$, $k_B T = 0.01$, $\theta_{max} = \frac{\pi}{6} \text{ (right) }, \theta_{max} = 0.35 \text{ (left) }$ after about $800k$ MC steps. }}
 	\label{fig:ovitopatch}
@@ -298,17 +296,17 @@ With the help of OVITO, let's evaluate the average number of bonds in the system
 		b_{nar} = 200 \pm 1
 	\end{aligned}
 \end{equation}
-In Fig.\ref{fig:energyPatches} we illustrate the energy of the system as a function of MC steps (it took a lot of MC steps to reach thermal equilibrium and we were not even completely there yet. However, $10^6$ MC steps implies approximately $100$ GB worth of data to be stored in the memory, so I couldn't proceed any further.). The average energy per particle $u$, taken considering only the last $10^5$ MC iteration is:
+In Fig.\ref{fig:energyPatches} we illustrate the energy of the system as a function of MC steps (it took a lot of MC steps to reach thermal equilibrium and I was not even completely there yet (an usual problem when using Metropolis at low temperatures). However, $10^6$ MC steps implies approximately $100$ GB worth of data to be stored in the memory, so I couldn't proceed any further.). The average energy per particle $u$, taken considering only the last $10^5$ MC iteration is:
 \begin{figure}
 	\centering
-	\includegraphics[scale = .8]{../MolecularDynamics/Ex1/fig/Energy_trace_plots_patch.pdf}
-	\caption{\textit{ddd}}
+	\includegraphics[scale = .8]{./FIG/Energy_trace_plots_patch.pdf}
+	\caption{\textit{Energy over number of MC steps (up to $10^6$ steps) for a patchy-spheres model with $\theta_{max} = \pi / 3$ (left) , $\theta_{max} = 0.35$ (right). The thermalization process is not perfect, but this is an standard pathological behavior of Metropolis algorithm when $T$ is low.}}
 	\label{fig:energyPatches}
 \end{figure}
 
 \begin{equation}
 	\begin{aligned}
-		u_{wid} &= -0.955 \pm 0 \\
+		u_{wid} &= -0.955 \pm 0.001 \\
 		u_{nar} &= -2.272 \pm 0.002
 	\end{aligned}
 \end{equation}

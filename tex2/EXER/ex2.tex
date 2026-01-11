@@ -1,4 +1,4 @@
-\chapter*{Algorithms for Equations of Motion integration}
+\chapter{Algorithms for Equations of Motion integration}
 
 \section{Harmonic oscillator}
 Implement the Velocity Verlet algorithm. Consider the harmonic oscillator:
@@ -13,14 +13,14 @@ Check the energy conservation, plotting $(E(t) - E_0)/E_0$ vs $t$, $E_0$ being t
 
 \textbf{\\ Resolution \\}
 
-The system in Eq.\ref{eq111} can be quite easily integrated with standard analysis; the solution, given a set of initial conditions $(q_0, p_0)$ reads:
+The system in Eq. \ref{eq111} can be quite easily integrated with standard analysis; the solution, given a set of initial conditions $(q_0, p_0)$ reads:
 \begin{equation}
 	\begin{aligned}
 		q(t) &= q_0 \cos(\omega t) + \frac{p_0}{\omega}\sin(\omega t) \\
 		p(t) &= p_0 \cos(\omega t) - q_0\omega\sin(\omega t)
 	\end{aligned}
 \end{equation}
-For the sake of simplicity, we are going to simulate trajectories that started in $t=0$ at $q_0 = 1, p_0 = \omega$, so that the equations of motion can be simplified:
+For the sake of simplicity, we are going to simulate trajectories that started in $t=0$ at $q_0 = 1, p_0 = 0$, so that the equations of motion can be simplified:
 \begin{equation}
 	\begin{aligned}
 		q(t) &= \cos(\omega t) \\
@@ -68,28 +68,28 @@ A minimal snapshot of the implemented code for the Velocity Verlet (VV) algorith
 The harmonic oscillator integrated trajectories are displayed in phase space in Fig.\ref{fig:phasespaceHO} and in a timeplot in Fig.\ref{fig:trajHO} having set $\omega = 1$. As expected, the trajectory in phase space closely resembles a circle centered in the origin with radius $\omega=1$. Furthermore, the oscillatory nature of the solutions is nicely reproduced by the algorithm. 
 \begin{figure}
 	\centering
-	\includegraphics[scale=0.5]{../MolecularDynamics/Ex2/fig/phase_space_trajectory.pdf}
-	\caption{\textit{On the right, phase space representation of the simulated trajectories when $\Delta t = 0.01$ integrating from $t=0$ up to $T = 120$. As one would expect, the trajectory. On the left, a close up view of a smaller portion of the plane region, where the granularity of the algorithm becomes clearer (and the arrow of time is color coded.)}}
+	\includegraphics[scale=0.5]{./FIG/phase_space_trajectory.pdf}
+	\caption{\textit{On the left, phase space representation of the simulated trajectories when $\Delta t = 0.01$ integrating from $t=0$ up to $T = 120$. On the right, a close up view of a smaller portion of the plane region, where the granularity of the algorithm becomes clearer (and the arrow of time is color coded.)}}
 	\label{fig:phasespaceHO}
 \end{figure}
 \begin{figure}
 	\centering
-	\includegraphics[scale=0.4]{../MolecularDynamics/Ex2/fig/qp_trajectory.pdf}
-	\caption{\textit{Velocity Verlet integrated curves for $\omega q(t)$ and $p(t)$ (on the left, a closer and zoomed view to better see the discrete points). Overall, the algorithm has found a seemingly convincing trajectory reproducing the typical oscillations of the physical problem. It looks like a small bias is present in all steps, but this will be better studied later on}}
+	\includegraphics[scale=0.4]{./FIG/qp_trajectory.pdf}
+	\caption{\textit{Velocity Verlet integrated curves for $\omega q(t)$ and $p(t)$ (on the right, a closer and zoomed view to better see the discrete points). Overall, the algorithm has found a seemingly convincing trajectory reproducing the typical oscillations of the physical problem. It looks like a small bias is present in all steps, but this will be better studied later on}}
 	\label{fig:trajHO}
 \end{figure}
 
-As stated before, the VV algorithm is supposed to be symplectic, i.e. it has to conserve a phase-space observable which is allegedly close enough to the actual Hamiltonian of the problem. To verify whether this property truly holds in the our specific case, we study the percentage variation of the empirical energy $E_n = \frac{1}{2}\omega^2 q_n^2 + \frac{1}{2}p_n^2$ compared to the true actual energy $\mathcal{H} = \frac{1}{2}\omega^2 = E_0$ throughout time in Fig.\ref{fig:energyHO}. The characteristic percentage deviation from the actual value $E_0$ and oscillates back and forth in time around a typical value $-1.25 \times 10^{-5}$ with a period approximately half of the natural period of the coordinates trajectory. In particular, the integrator always underestimate the true energy of the system, but within a reasonable bounded interval. This is a good sign and confirm the symplectic nature of the algorithm, meaning that no energetic drift will appear during the numerical integration of the equations of motion. 
+As stated before, the VV algorithm is supposed to be symplectic, i.e. it has to conserve a phase-space observable which is allegedly close enough to the actual Hamiltonian of the problem. To verify whether this property truly holds in our specific case, we study the percentage variation of the empirical energy $E_n = \frac{1}{2}\omega^2 q_n^2 + \frac{1}{2}p_n^2$ compared to the true actual energy $\mathcal{H} = \mathcal{H}(q_0, p_0) = \frac{1}{2}\omega^2 = E_0$ throughout time in Fig.\ref{fig:energyHO}. The characteristic percentage deviation from the actual value $E_0$ and oscillates back and forth in time around a typical value $-1.25 \times 10^{-5}$ with a period approximately half of the natural period of the coordinates trajectory. In particular, the integrator always underestimate the true energy of the system, but within a reasonable bounded interval. This is a good sign and confirm the symplectic nature of the algorithm, meaning that no energetic drift will appear during the numerical integration of the equations of motion. 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/energy_conservation.pdf}
+	\includegraphics[scale = 0.4]{./FIG/energy_conservation.pdf}
 	\caption{\textit{Percentage variation of integrated energy $E(t)$ with respect to the constant true value $E_0$. The plot clearly shows that the integrator always underestimate the energy by an oscillating amount bounded by $\max \Delta E \approx -2.5\times 10^{-5}E_0$. Overall, the symplectic nature of the VV algorithm is confirmed. }}
 	\label{fig:energyHO}
 \end{figure}
 Another way to verify whether the VV has correctly integrated Eq.\ref{eq111} is to simply plot the variation with respect to the analytical form of $q(t), p(t)$: this is done in Fig.\ref{fig:difftrajHO}\footnote{If the coordinate $q$ is of order $1$, then $p$ is usually of order $\omega$, so we normalize $p(t)/\omega$ to get realistic results.}. The variation for both $q$ and $p$ is of the order of $1\%$, hence we can be satisfied with the algorithm's output.
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/deviation_analytical.pdf}
+	\includegraphics[scale = 0.4]{./FIG/deviation_analytical.pdf}
 	\caption{\textit{Relative variation of $q(t), p(t)$ with respect to the true analytical curves as a function of time. Similarly to Fig.\ref{fig:energyHO}, the deviation oscillates back and forth around $0$ and stays bounded within $\approx 1\%$.}}
 	\label{fig:difftrajHO}
 \end{figure}
@@ -100,13 +100,13 @@ The Verlet algorithm is found to be stable up to a threshold value $\Delta t^\st
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.5]{../MolecularDynamics/Ex2/fig/max_deviation_vs_deltat}
-	\caption{\textit{Algorithmic errors (intended as maximum deviations of $q(t), p(t)$ from their theoretical curves) vs time-step $\Delta t$, keeping $\omega=1$ fixed. The right plot highlights the existence of a threshold at $\Delta t = \frac{2}{\omega}$ above which the error skyrockets and the integrator completely fails. The left plot can be used to infer the scaling behavior of the error with respect to $\Delta t$, $\Delta q \propto O(\Delta t^2)$ (a typical property of a 2nd order integrator such as VV).}}
+	\includegraphics[scale = 0.5]{./FIG/max_deviation_vs_deltat}
+	\caption{\textit{Algorithmic errors (intended as maximum deviations of $q(t), p(t)$ from their theoretical curves) vs time-step $\Delta t$, keeping $\omega=1$ fixed. The left plot highlights the existence of a threshold at $\Delta t = \frac{2}{\omega}$ above which the error skyrockets and the integrator completely fails. The rightmost plot can be used to infer the scaling behavior of the error with respect to $\Delta t$, $\Delta q \propto O(\Delta t^2)$ (a typical property of a 2nd order integrator such as VV).}}
 	\label{fig:errorHO}
 \end{figure}
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.5]{../MolecularDynamics/Ex2/fig/max_deviation_vs_omega.pdf}
+	\includegraphics[scale = 0.5]{./FIG/max_deviation_vs_omega.pdf}
 	\caption{\textit{Algorithmic errors (intended as maximum deviations of $q(t), p(t)$ from their theoretical curves) vs $\omega$, this time keeping $\Delta t=0.01$ fixed. The same critical value $\omega = \frac{2}{\Delta t}$ can be seen from a different perspective (no points over that value since overflows errors hindered the numerical integration). A scaling behavior $O(\omega^3)$ emerges. }}
 	\label{fig:errorHO2}
 \end{figure}
@@ -120,7 +120,7 @@ The same plot can be realized by keeping $\Delta t $ fixed to $\Delta t = 0.01$ 
 \section{Lennard-Jones fluid in the NVE ensemble}
 The purpose of this section is to simulate the dynamical evolution of a system composed of $N = 200$ interacting particles using MD techniques to infer thermodynamical quantities such as the internal energy or structural properties like the radial distribution function. The simulation is carried on using a dedicated and powerful software called LAMMPS, which enables us to instantiate and inspect highly-customizable Molecular-Dynamics simulation. 
 
-LAMMPS can be readily used in the terminal given a script file is provided to him. The script file should contain all the details that the LAMMPS MD engine will need to run the computations. An instructive section of the script that I've used is reported here for the sake of completeness:
+LAMMPS can be readily used in the terminal given a script file is provided. The script file should contain all the details that the LAMMPS MD engine will need to run the computations. An instructive section of the script that I've used is reported here for the sake of completeness:
 
 \begin{itemize}
 	\item{Step 1: Initialization}. In this section, we tell LAMMPS the geometric properties of our simulation: 
@@ -216,7 +216,7 @@ LAMMPS can be readily used in the terminal given a script file is provided to hi
 		thick,
 		]
 		{4*(x^(-12) - x^(-6))};
-		\addlegendentry{$r_{cut} = 4$}
+		\addlegendentry{$r_{cut} = 2^{1/6}$}
 		
 		\addplot [
 		domain=0.85:3, 
@@ -225,7 +225,7 @@ LAMMPS can be readily used in the terminal given a script file is provided to hi
 		thick,
 		]
 		{4*(x^(-12) - x^(-6)) + 0.0055};
-		\addlegendentry{$r_{cut} = 3$}
+		\addlegendentry{$r_{cut} =2.5$}
 		
 		\addplot [
 		domain=0.85:2.5, 
@@ -234,7 +234,7 @@ LAMMPS can be readily used in the terminal given a script file is provided to hi
 		thick,
 		]
 		{4*(x^(-12) - x^(-6))+0.016};
-		\addlegendentry{$r_{cut} = 2.5$}
+		\addlegendentry{$r_{cut} = 3$}
 		
 		\addplot [
 		domain=0.85:1.122, 
@@ -243,7 +243,7 @@ LAMMPS can be readily used in the terminal given a script file is provided to hi
 		thick,
 		]
 		{4*(x^(-12) - x^(-6)) + 1};
-		\addlegendentry{$r_{cut} = 2^{1/6}$}
+		\addlegendentry{$r_{cut} = 4$}
 		
 
 		
@@ -261,7 +261,7 @@ Let $E_0$ be the initial energy of the system:
 $$
 E_0 = K_0 + V_0 = \sum_i \frac{1}{2}p_i^2(t=0) + \sum_{i\neq j} V_{LJ}(r_{ij}(t=0))
 $$
-where the $p_i(t=0)$ were sampled from the Maxwell-Boltzmann at temperature $T=1$ thanks to the thermostat phase in LAMMPS and the configuration was chosen at random while keeping sufficient distance between the molecules. The time evolution of the total energy is reported in Fig.\ref{fig:energyLJ} for $\rho = 0.62$ and $\rho = 0.4$. Along with the relative energy variation, Fig.\ref{fig:energyHO} also displays the behavior of the temperature $T$ as a function of time. 
+where the $p_i(t=0)$ were sampled from the Maxwell-Boltzmann at temperature $T=1$ thanks to the thermostat phase in LAMMPS and the configuration was chosen at random while keeping sufficient distance between the molecules. The time evolution of the total energy is reported in Fig. \ref{fig:energyLJ} for $\rho = 0.62$ and $\rho = 0.4$. Along with the relative energy variation, Fig. \ref{fig:energyLJ} also displays the behavior of the temperature $T$ as a function of time. 
 
 Overall, the VV integrator has produced valid trajectories and the energy has approximately stayed constant: in the worst scenario (when $r_{cut}=1.12\approx 2^{1/6}$), the relative variation with respect to $E_0$ was about $\approx 0.1\%$, which is a solid result and an usually acceptable value when performing MD simulations. Furthermore, one has to consider that the simulation was run until $10^6$ steps were reached: other more sophisticated integration schemes (e.g. Runge-Kutta methods) would have probably better approximated the system during the initial steps but would have yielded a noticeable and unacceptable energy drift over the course of $1$ million time-steps. 
 
@@ -298,8 +298,8 @@ Another interesting aspect to study is the time evolution of the temperature $T$
 
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/energyLJ_0_62.pdf}
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/energyLJ_0_40.pdf}
+	\includegraphics[scale = 0.4]{./FIG/energyLJ_0_62.pdf}
+	\includegraphics[scale = 0.4]{./FIG/energyLJ_0_40.pdf}
 	\caption{\textit{Energy and temperature plots at different cut-off radius $r_{cut}$ when $\rho = 0.62$ (first two rows) and $\rho = 0.4$ (last two rows). The time-step was set to $\Delta t = 0.005$ and the number of steps is $10^6$. Overall, the energy deviations and the average temperature are well behaved and bounded. In the temperatures plots, the average $\bar T$ is represented with a dashed line and the standard deviation with a solid band.}}
 	\label{fig:energyLJ}
 \end{figure} 
@@ -309,16 +309,16 @@ Another interesting aspect to study is the time evolution of the temperature $T$
 Provided our simulations have faithfully conserved the total energy $E(t)$ within reasonable bounds, we can start analyzing other physical properties of interest like the potential and kinetic energy. The resulting histograms for those observables (normalized per number of particles) are reported in Fig.\ref{fig:histoKU}.
 \begin{figure}
 \centering
-\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/hist_kin_pot_LJ_0_62}
-\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/hist_kin_pot_LJ_0_4}
-\caption{\textit{Histograms for the kinetic energy per particle (on the right) and the potential energy per particle (on the left) at various cut-off distances when $\rho = 0.62$ (top band)} and $\rho = 0.4$ (bottom band)}
+\includegraphics[scale = 0.4]{./FIG/hist_kin_pot_LJ_0_62}
+\includegraphics[scale = 0.4]{./FIG/hist_kin_pot_LJ_0_4}
+\caption{\textit{Histograms for the kinetic energy per particle (on the left) and the potential energy per particle (on the right) at various cut-off distances when $\rho = 0.62$ (top band)} and $\rho = 0.4$ (bottom band)}
 \label{fig:histoKU}
 \end{figure}
 Let us first derive how the kinetic energy histogram should look like. By invoking the equipartition theorem, we can write:
 \begin{equation}
 	\langle K\rangle = \frac{3}{2}Nk_B \langle T \rangle
 \end{equation}
-for monoatomic gases. Note this is absolutely independent of the potential shape, even more so from the cut-off radius. Since we work with $k_B = 1$ and $T=1$, we should see a kinetic energy per particle $K = 1.5$ \textit{independent of $r_{cut}$}. The kinetic energy histograms in Fig. \ref{fig:histoKU} are compatible with this computation and closely resemble gaussian distributions, but their average values is slightly different from the expected $K = 1.5$, especially for $\rho = 0.62$ when all the $4$ simulations tend to overestimate the correct value of $K$. I believe this is again a matter of numerical instability of the integrator and a direct consequence of the total temperature drift that was commented in the previous subsection: in fact, one can easily see that the worst results for the kinetic energy (that is, the farthest from $K = 1.5$) were obtained when $\rho = 0.62$ and $r_{cut} = 2.5$, the same set of parameters that yielded the worst temperature average in Table \ref{table:table2}. The average kinetic energies are, however, perfectly compatible with the average measured temperature, so that those two anomalies are intimately linked.
+for monoatomic gases. Note this is absolutely independent of the potential shape, even more so from the cut-off radius. Since we work with $k_B = 1$ and $T=1$, we should see a kinetic energy per particle $K = 1.5$ \textit{independent of $r_{cut}$}. The kinetic energy histograms in Fig. \ref{fig:histoKU} are compatible with this computation and closely resemble gaussian distributions, but their average values is slightly different from the expected $K = 1.5$, especially for $\rho = 0.62$ when all the $4$ simulations tend to overestimate the correct value of $K$. I believe this is again a matter of numerical instability of the integrator and a direct consequence of the total temperature drift that was commented in the previous subsection: in fact, one can easily see that the worst results for the kinetic energy (that is, the farthest from $K = 1.5$) were obtained when $\rho = 0.62$ and $r_{cut} = 2.5$, the same set of parameters that yielded the worst temperature average in Table \ref{table:table2}. The average kinetic energies are, however, perfectly correlated with the average measured temperature, so that those two anomalies are intimately linked (recall $\langle k \rangle = \frac{3}{2} \langle T \rangle$).
 
 %Another reason to believe that those mismatches are essentially due to the integrator per se and not on some physically relevant property is that they are more evident when the system is more crowded, i.e. when $\rho = 0.62$. Every time a particle is moved
 
@@ -331,8 +331,8 @@ Finally, we analyze the radial distribution function $g(r)$ of the system, compu
 By setting the cutoff radius to $r_{cut} = 4$, we essentially capture the full range of the interaction; consequently, we observe the typical oscillatory behavior characteristic of the Lennard-Jones potential, where peaks alternate with minima. This structural ordering indicates that the fluid possesses significant short-range order. The first sharp peak corresponds to the nearest-neighbor shell, located approximately at the distance where the Lennard-Jones potential reaches its minimum (around $r \approx 2^{1/6}\sigma$). This implies that particles tend to cluster at this energetically favorable distance.  Subsequent peaks represent further coordination shells (next-nearest neighbors). However, as $r$ increases, these oscillations progressively vanishes and $g(r)$ converges to $1$. This decay implies the absence of long-range order, confirming that the system is indeed in a fluid phase where spatial correlations vanish over long distances but are fundamental at small scales.
 \begin{figure}
 	\centering
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/rdf_LJ_0_62.pdf}
-	\includegraphics[scale = 0.4]{../MolecularDynamics/Ex2/fig/rdf_LJ_0_40.pdf}
+	\includegraphics[scale = 0.4]{./FIG/rdf_LJ_0_62.pdf}
+	\includegraphics[scale = 0.4]{./FIG/rdf_LJ_0_40.pdf}
 	\caption{\textit{Radial distribution function $g(r)$ for the Lennard-Jones model at different cut-off radius when $\rho =0.62$ (above) and $\rho = 0.4$ (below) }}
 	\label{fig:LJrdf}
 \end{figure}
