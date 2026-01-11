@@ -1,0 +1,169 @@
+\chapter{Brownian and Langevin dynamics}
+
+\section{Diffusion in Brownian/Langevin dynamics}
+
+Consider an isolated particle or an "ideal gas" of non interacting particles. Set $m = 1$, $\sigma = 1$ and $\epsilon = 1$ as units of mass, length, energy. Set $L = 20\sigma$ and use periodic boundary conditions. Choose initial condition as you prefer; the most convenient choice is to set all the starting positions in the origin. Simulate Brownian and Langevin dynamics in 3D, that is, the overdamped limit (Euler/Maruyama integrator) and the “underdamped” limit (Stochastic Velocity Verlet or with the second order integrator). Compute the mean square displacement and discuss what happens upon varying the temperature ($0.1 < T^* < 2, \gamma = \frac{1}{\tau}$) and the friction coefficient ($0.1 < \gamma \tau <100, T^* = 1$). Pick $5-10$ values in each case. Compare the results with the theory. Further measure the distribution of the displacement of the particle(s) along one axis at different times: what changes to the distribution as time progresses.
+
+\textbf{Resolution}\\
+
+
+\subsection{Brownian dynamics}
+To account for stochastic and random interactions experienced by a mesoscopic particle immersed in a fluid, we can use imagine to write a set of equations of motion ($m = 1$):
+\begin{equation}
+	\begin{cases}
+		\frac{d}{dt}\dot x = \vec p \\
+		\frac{d}{dt} \vec p = \vec F_{ext}(x) - \gamma \vec p + \vec \eta(t)
+	\end{cases}
+	\label{eq:langevin}
+\end{equation}
+called Langevin equations. Here, the mesoscopic particle is subject to an arbitrary external force $\vec F_{ext}(x)$ (for example, gravity). The coupling with the fluid is expressed by two distinct terms: a friction term $-\gamma \vec p$ and a purely stochastic term $\vec \eta(t)$ which represents the random collisions on the mesoscopic particle caused by the fluid atoms. Assuming the characteristic timescale of those collisions $t_c$ is much smaller than the usual timescale of the process $\tau \approx 1/\gamma$, then one can further characterize $\eta(t)$ as a white gaussian noise:
+$$
+\langle \eta_i(t) \rangle = 0
+$$
+$$
+\langle \eta_i(t)\eta_j(t') \rangle = 2A\delta(t-t')\delta_{i,j}
+$$
+In the Brownian perspective, one assume that $\dot p=0$, hence the particles velocities are instantaneously thermalized (no inertia, equivalent to $m / \gamma << 1$). In this case, we're left with a first-order stochastic equation for $x$:
+\begin{equation}
+	\frac{d}{dt} \vec x = \frac{1}{\gamma} \vec F_{ext}(\vec x) + \frac{1}{\gamma}\vec \eta(t)
+\end{equation}
+or, equivalently:
+\begin{equation}
+	d x_i = \frac{F_{ext,i}}{\gamma}dt + \frac{1}{\gamma} dW_t
+\end{equation}
+with $dW_t$ being the differential Wiener process:
+$$
+\langle dW_t \rangle = 0
+$$
+$$
+\langle (dW_t)^2 \rangle = 2A dt
+$$
+In the case we're interested in, $\vec F_{ext} = 0$ and we obtain the simple equation;
+\begin{equation}
+	dx_i = \frac{1}{\gamma} dW_t
+\end{equation}
+which is the mathematical form of the \textit{pure Brownian process}. This equation can be easily solved for the probability distribution $p(\vec x,t)$ (using, for instance, Fokker Planck, which leads to a heat transfer equation), providing\footnote{Assuming all particles have the same initial condition, $p(\vec x, 0) = \delta(\vec x)$}:
+\begin{equation}
+	p(\vec x,t) = \frac{1}{(2\pi\sigma^2)^{d/2}}\exp\Bigr(-\frac{|x|^2}{2\sigma^2}\Bigl)
+\end{equation}
+where $\sigma^2 = \sigma^2(t) = 2 d D t$ ($d$ is the dimension of the problem and $D$ is the diffusion coefficient, which can be easily computed $D = \frac{k_B T}{m\gamma}$, Einstein relation).
+
+Now that we have established the general theoretical framework for the Brownian process, we can start examining the results we obtained. To code an ensemble of non interacting Brownian particles, an Euler/Maruyama integrator was used:
+\begin{lstlisting}[language=python]
+def computeBrownianTrajectories(T, gamma, dt, steps, N, m = 1, sigma = 1.0, L = 20):
+	# Save the trajectories in r. Initial condition: all in the origin
+	r = np.zeros((N, 3))
+	# Mean squared distance from (0,0,0)
+	msd = np.zeros(steps)
+	
+	noiseFactor = np.sqrt(2 * T / (m * gamma))
+	
+	for t in range(steps):
+	# Sample a random displacement 
+		xi = np.random.normal(loc=0.0, scale=1.0, size=(N, 3))
+		# Update positions (the only term is the random noise, no external forces)
+		r = r + noiseFactor * xi * np.sqrt(dt)
+		msd[t] = np.mean(np.sum(r**2, axis=1))
+	return r, msd
+\end{lstlisting}
+Given a realization of a trajectory $\vec r(t)$ (which represents a stochastic process), a fundamental ensemble quantity is the \textit{mean squared displacement} (MSD). Assuming the particle starts at the origin, $\vec r(0) = \vec 0$, this is defined as:
+\begin{equation}
+	MSD(t) = \langle |\vec r(t) - \vec r(0)|^2 \rangle = \langle |\vec r(t)|^2 \rangle
+	\label{eq:msd}
+\end{equation}
+Note that this quantity coincides with the variance of the position at time $t$, since the mean position remains zero for a purely diffusive process ($\langle \vec r(t) \rangle = \vec 0$):
+$$
+\sigma^2(t) = \langle |\vec r(t) - \langle\vec r(t) \rangle|^2 \rangle =  \langle |\vec r(t)|^2 \rangle = MSD(t)
+$$
+As we have seen before, this quantity grows linearly with time:
+$$
+\sigma^2(t) = 2d D t = \frac{2d k_B T}{m \gamma}t
+$$
+where $d$ is the dimensionality of the system (in our simulation, $d=3$). Setting $m=1, k_B=1$, this simplifies to $MSD(t) = 6\frac{T}{\gamma}t$.
+
+In Fig. \ref{fig:brownian_vsT}, we illustrate the behavior of $MSD(t)$ upon varying $T$ while keeping the friction coefficient fixed at $\gamma = 1$ (in rescaled units). To estimate the statistical average in Eq. \ref{eq:msd}, we considered an ensemble of $N$ independent particles, extracting $N$ samples of the squared displacement at each time step to compute the ensemble average (which converges to the theoretical $MSD(t)$ as $N \to \infty$).
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{./FIG/brownian_msd_vs_t.pdf} 
+	\caption{\textit{Mean squared displacement (MSD) for a Brownian particle as a function of time. The friction coefficient was fixed at $\gamma = 1$, while temperatures were varied as indicated in the legend. Statistical averages (and associated errors) were computed over an ensemble of $N = 1000$ independent particles. Error bars are included but are smaller than the marker size.}}
+	\label{fig:brownian_vsT}
+\end{figure}
+
+The numerical results are in excellent agreement with the theoretical predictions for Brownian motion. Specifically, Fig. \ref{fig:brownian_vsT} confirms the diffusive scaling behavior $MSD(t) \propto t$. In the log-log plot, the temperature $T$ determines the vertical intercept, following the relation:
+$$
+\log(MSD) = \log(t) + \log\left(\frac{2d T}{\gamma}\right)
+$$
+This dependence is clearly visible in the vertical shift of the curves as $T$ increases.
+
+
+Let us now turn our attention to the case where we fix the temperature at $T = 1$ and vary the friction coefficient $\gamma$. The results are displayed in Fig. \ref{fig:brownian_vsgamma}. Once again, the simulations confirm the diffusive regime $MSD(t) \propto t$. However, unlike the temperature, the friction coefficient appears in the denominator of the Einstein relation ($D \propto \gamma^{-1}$). In the log-log representation, this implies that increasing $\gamma$ reduces the vertical intercept:
+$$
+\log(MSD) = \log(t) + \log(2d T) - \log(\gamma)
+$$
+Consequently, we expect the curves with higher friction to lie below those with lower friction. This inverse scaling is precisely what we observe in Fig. \ref{fig:brownian_vsgamma}.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{./FIG/brownian_msd_vs_gamma.pdf} 
+	\caption{\textit{Mean squared displacement (MSD) for a Brownian particle as a function of time. In this case, the temperature was fixed at $T = 1$, while the friction coefficient $\gamma$ was varied. Statistical averages (and associated errors) were computed over an ensemble of $N = 1000$ independent particles. As in Fig. \ref{fig:brownian_vsT}, error bars are included but are smaller than the marker size.}}
+	\label{fig:brownian_vsgamma}
+\end{figure}
+
+\subsection{Langevin dynamics}
+In the full Langevin framework, inertial terms are no longer neglected, and we must consider the complete second-order stochastic differential equation represented in Eq. \ref{eq:langevin}. 
+While various numerical schemes exist to solve this equation, I employed the \textit{Stochastic Velocity Verlet} integrator. This algorithm extends the standard symplectic Verlet scheme to include dissipative ($-\gamma \vec{v}$) and random ($\vec{\eta}$) forces.
+
+The integration over a time step $\Delta t$ proceeds as follows:
+\begin{enumerate}
+	\item \textbf{First half-kick:}
+	\begin{equation}
+		\vec{v}(t + \frac{\Delta t}{2}) = \vec{v}(t) + \frac{\Delta t}{2m} \left[ \vec{F}_{cons}(\vec{r}(t)) - \gamma \vec{v}(t) + \vec{\xi}(t) \right]
+	\end{equation}
+	
+	\item \textbf{Position update:}
+	\begin{equation}
+		\vec{r}(t + \Delta t) = \vec{r}(t) + \vec{v}(t + \frac{\Delta t}{2}) \Delta t
+	\end{equation}
+	
+	\item \textbf{Second half-kick:}
+	After computing the new forces and generating a new stochastic term $\vec{\xi}(t+\Delta t)$:
+	\begin{equation}
+		\vec{v}(t + \Delta t) = \vec{v}(t + \frac{\Delta t}{2}) + \frac{\Delta t}{2m} \left[ \vec{F}_{cons}(\vec{r}(t+\Delta t)) - \gamma \vec{v}(t + \frac{\Delta t}{2}) + \vec{\xi}(t+\Delta t) \right]
+	\end{equation}
+\end{enumerate}
+Here, $\vec{\xi}(t)$ is sampled from a Gaussian distribution with zero mean and variance dictated by the usual relation: $\sigma^2 = 2\gamma T / \Delta t$. The initial position is $\vec x(0) = 0$, whereas the initial velocities were sampled from the Maxwell-Boltzmann distribution at temperature $T$.
+
+The Mean Squared Displacement (MSD) for the full Langevin dynamics is presented in Fig. \ref{fig:langevin_vs_t}. Unlike the pure Brownian motion, where the dynamics is diffusive at all times, the Langevin particle exhibits two distinct regimes separated by a characteristic relaxation time $\tau = m/\gamma = \frac{1}{\gamma}$:
+
+\begin{enumerate}
+	\item \textbf{Ballistic Regime ($t \ll \tau$):} At very short timescales, the friction has not yet dissipated the initial momentum. The MSD grows quadratically with time:
+	\begin{equation}
+		MSD(t) \approx v_0^2 t^2 \propto t^2
+	\end{equation}
+	In the log-log plot of Fig. \ref{fig:langevin_vs_t}, this is recognizable as the initial slope of $2$.
+	
+	\item \textbf{Diffusive Regime ($t \gg \tau$):} At long timescales, the memory of the initial velocity is lost due to friction and random collisions. The system recovers the standard diffusive behavior described by the Einstein relation:
+	\begin{equation}
+		MSD(t) \approx 6 D t \propto t
+	\end{equation}
+	Visually, the curves bend and asymptotically align with a slope of $1$.
+\end{enumerate}
+
+Fig. \ref{fig:langevin_vs_t} clearly shows this crossover. As the temperature $T$ increases, the curves shift vertically because both the thermal velocity (ballistic regime) and the diffusion coefficient (diffusive regime) scale linearly with $T$.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{./FIG/langevin_msd_vs_t.pdf}
+	\caption{\textit{Mean squared displacement (MSD) for a mesoscopic particle obeying Langevin equations Eq. \ref{eq:langevin} as a function of time. The friction coefficient $\gamma$ was fixed at $1$. }}
+	\label{fig:langevin_vs_t}
+\end{figure}
+
+Finally, we analyze the effect of varying the friction coefficient $\gamma$ while keeping the temperature constant ($T=1$), as reported in Fig. \ref{fig:langevin_vsgamma}. In the short-time ballistic limit ($t \ll 1/\gamma$), the mean squared displacement is governed by the initial thermal velocity $v_0 = \langle v^2 \rangle = 3k_B T/m$. Since the temperature is fixed, the friction coefficient plays no role in this early stage; consequently, all curves initially \textit{collapse} onto a single master trajectory with a slope of 2, regardless of the specific value of $\gamma$. The influence of friction becomes apparent only as time progresses, determining the characteristic timescale $\tau = m/\gamma$ at which the crossover to the diffusive regime occurs. Systems subjected to higher friction (larger $\gamma$) possess a shorter relaxation time, causing them to abandon the ballistic trajectory earlier.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{./FIG/langevin_msd_vs_gamma.pdf}
+	\caption{\textit{Mean squared displacement (MSD) for a mesoscopic particle obeying Langevin equations Eq. \ref{eq:langevin} as a function of time. The temperature is fixed $T = 1$.}}
+	\label{fig:langevin_vsgamma}
+\end{figure}
