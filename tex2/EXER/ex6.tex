@@ -167,3 +167,14 @@ Finally, we analyze the effect of varying the friction coefficient $\gamma$ whil
 	\caption{\textit{Mean squared displacement (MSD) for a mesoscopic particle obeying Langevin equations Eq. \ref{eq:langevin} as a function of time. The temperature is fixed $T = 1$.}}
 	\label{fig:langevin_vsgamma}
 \end{figure}
+
+As a final analysis, we examine the probability distribution of particle displacements along a single axis at various time intervals, as shown in Fig. \ref{fig:histoLangeBrown}. In the case of the pure Brownian process (overdamped limit), the distribution is Gaussian at all times. The empirical histograms are perfectly fitted by the theoretical probability density function with variance growing linearly with time ($\sigma^2 = 2Dt$), characteristic of normal diffusion.
+
+Conversely, the full Langevin dynamics exhibits the usual crossover behavior. In the ballistic regime ($t \ll \gamma^{-1}$), the distribution width scales as $\sigma \propto t$, making it significantly narrower than the diffusive prediction. The standard diffusive Gaussian profile, characterized by $\sigma^2 = 2Dt$, is asymptotically recovered only for timescales $t \gg \gamma^{-1}$. Indeed, our empirical results show that the distribution converges to the diffusive prediction only at later times (e.g., $t = 10, 50$).
+
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{./FIG/histograms_brown_langevin.pdf}
+	\caption{\textit{Histograms of a Brownian particle position (on the left) and of a Langevin position (on the right), averaging over $N = 10000$ independent samples. For the sake of simplicity, I've chosen the first dimension ($x$), but the results would have been the same regardless of the specific axis. Temperature is fixed at $T = 1$ and $\gamma = 1, dt = 0.01$. }}
+	\label{fig:histoLangeBrown}
+\end{figure}
