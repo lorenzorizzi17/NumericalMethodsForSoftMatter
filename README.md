@@ -8,7 +8,7 @@ In particular, it includes:
    
 2) Direct **Monte Carlo method** to numerically estimate integrals in one or more dimensions, including the use of **importance sampling** to reduce variance
    
-3) Theory of **Markov chains **(aperiodicity, irreducibility, ergodicity, invariant distribution, etc.)
+3) Theory of **Markov chains**(aperiodicity, irreducibility, ergodicity, invariant distribution, etc.)
 
 4) **2D Ising model** at zero field using the **Metropolis algorithm** with local dynamics. Study of phase transitions and order parameters (magnetization, energy, specific heat, and susceptibility). Diagnostics of the Markov chain near criticality, including estimates of the correlation length, critical slowing down, and integrated correlation time. The full code for the 2D Ising simulation is written in C++ for efficiency and is hosted in a separate dedicated repository, which extends beyond this specific homework with different MCMC engines: [YAIS repo](https://github.com/lorenzorizzi17/YAIS). Have a look at it!
 
