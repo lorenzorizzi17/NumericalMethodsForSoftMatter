@@ -1,0 +1,11 @@
+rho:0.2
+N:200
+r_cut:1.6
+skin:0.8
+M:3
+max_displacement:0.35
+num_MC_steps:1000
+temperature:1
+max_cos_theta:-0.001
+energyWell:-1
+gamma:0.3

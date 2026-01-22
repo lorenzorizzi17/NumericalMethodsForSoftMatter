@@ -1,0 +1,5 @@
+warplan.md
+*.log
+data/
+build/
+.vscode/
