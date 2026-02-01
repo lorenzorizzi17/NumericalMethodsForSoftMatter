@@ -1,6 +1,7 @@
 *.pdf linguist-vendored
 *.pptx linguist-vendored
 *.docx linguist-vendored
+*.ipynb linguist-vendored
 
 fig/* linguist-vendored
 *.png linguist-vendored
