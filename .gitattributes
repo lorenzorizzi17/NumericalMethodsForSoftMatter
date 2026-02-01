@@ -1,0 +1,13 @@
+*.pdf linguist-vendored
+*.pptx linguist-vendored
+*.docx linguist-vendored
+
+fig/* linguist-vendored
+*.png linguist-vendored
+*.jpg linguist-vendored
+
+*.csv linguist-vendored
+*.dat linguist-vendored
+*.txt linguist-vendored
+
+*.h linguist-language=C++
